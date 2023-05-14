@@ -1,21 +1,29 @@
+import { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Button, View } from 'react-native';
+
 import Scrabble from '../scrabble/Scrabble';
 import Board from '../components/Board';
-import { useState } from 'react';
+import { AddWordFn } from '../types/ScrabbleFns';
+
+const ScrabbleGame = new Scrabble();
 
 const App = () => {
-  const scrabbleGame = new Scrabble();
-  const [reset, setReset] = useState(0);
+  const [update, setUpdate] = useState(false);
 
   const handleReset = () => {
-    scrabbleGame.resetBoard();
-    setReset(reset + 1);
+    ScrabbleGame.resetBoard();
+    setUpdate(!update);
+  };
+
+  const handleAddWord: AddWordFn = (word, coords, direction) => {
+    ScrabbleGame.addWord(word, coords, direction);
+    setUpdate(!update);
   };
 
   return (
     <View style={styles.container}>
-      <Board board={scrabbleGame.board} />
+      <Board board={ScrabbleGame.board} handleAddWord={handleAddWord} />
       <Button onPress={handleReset} title="Reset?" />
       <StatusBar style="auto" />
     </View>

@@ -1,17 +1,10 @@
-import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import fs from 'react-native-fs';
-
 import ScrabbleBoard from '../types/ScrabbleBoard';
-import TileType, { isChar, isChars } from '../types/TileType';
+import TileType, { isChars } from '../types/TileType';
 import WORD_LIST from './scrabble-word-list';
 import LETTER_VALUES from './letter-values.json';
+import { AddWordFn } from '../types/ScrabbleFns';
 
 type SpecialTilesList = [[number, number], TileType][];
-
-const PATH_TO_WORD_LIST = './small-word-list.txt';
-const WORD_LIST_URL =
-  'https://www.wordgamedictionary.com/twl06/download/twl06.txt';
 
 class Scrabble {
   board: ScrabbleBoard;
@@ -23,8 +16,6 @@ class Scrabble {
     );
     this.specialTiles = specialTiles ?? DEFAULT_SPECIAL_TILES;
     this.resetBoard();
-    console.log(this.addWord('hello', [0, 0], 'LEFT_TO_RIGHT'));
-    console.log(this.board);
   }
 
   resetBoard = () => {
@@ -47,13 +38,9 @@ class Scrabble {
     return this.getWords().includes(word);
   };
 
-  addWord = (
-    word: string,
-    start: [number, number],
-    direction: 'TOP_TO_BOTTOM' | 'LEFT_TO_RIGHT' = 'LEFT_TO_RIGHT'
-  ): boolean => {
+  addWord: AddWordFn = (word, start, direction): boolean => {
     const chars = word.split('');
-    const [x, y] = start;
+    const [y, x] = start;
     // Checks
     if (
       !/^[0-9]{1,2}$/.test(`${x}`) ||
@@ -63,27 +50,26 @@ class Scrabble {
       !isChars(chars) ||
       !this.isValidWord(word)
     ) {
-      console.log('Failed a check');
       return false;
     }
 
     if (direction === 'LEFT_TO_RIGHT') {
       // Check boundaries
-      if (x + word.length - 1 > this.board[0].length) {
+      if (x + word.length > this.board[0].length) {
         return false;
       }
       // Add word
       chars.forEach((char, index) => {
-        this.board[x][y + index].letter = char;
+        this.board[y][x + index].letter = char;
       });
     } else {
       // Check boundaries
-      if (y + word.length - 1 > this.board.length) {
+      if (y + word.length > this.board.length) {
         return false;
       }
       // Add word
       chars.forEach((char, index) => {
-        this.board[x + index][y].letter = char;
+        this.board[y + index][x].letter = char;
       });
     }
     return true;
