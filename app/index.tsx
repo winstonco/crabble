@@ -1,10 +1,22 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Button, View } from 'react-native';
+import Scrabble from '../scrabble/Scrabble';
+import Board from '../components/Board';
+import { useState } from 'react';
 
 const App = () => {
+  const scrabbleGame = new Scrabble();
+  const [reset, setReset] = useState(0);
+
+  const handleReset = () => {
+    scrabbleGame.resetBoard();
+    setReset(reset + 1);
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+      <Board board={scrabbleGame.board} />
+      <Button onPress={handleReset} title="Reset?" />
       <StatusBar style="auto" />
     </View>
   );
