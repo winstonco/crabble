@@ -1,7 +1,7 @@
 import { Slot } from 'expo-router';
 import Head from 'expo-router/head';
 
-const AppLayout = () => {
+const RootLayout = () => {
   return (
     <>
       <Head>
@@ -14,4 +14,4 @@ const AppLayout = () => {
   );
 };
 
-export default AppLayout;
+export default RootLayout;

@@ -23,10 +23,10 @@
       }
     },
     "web": {
+      "name": "Crabble",
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    },
-    "plugins": ["expo-router"]
+    }
   },
   "overrides": {
     "metro": "0.76.0",
