@@ -1,11 +1,31 @@
+import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import fs from 'react-native-fs';
+
 import ScrabbleBoard from '../types/ScrabbleBoard';
-import TileType from '../types/TileType';
+import TileType, { isChar, isChars } from '../types/TileType';
+import WORD_LIST from './scrabble-word-list';
+import LETTER_VALUES from './letter-values.json';
 
 type SpecialTilesList = [[number, number], TileType][];
+
+const PATH_TO_WORD_LIST = './small-word-list.txt';
+const WORD_LIST_URL =
+  'https://www.wordgamedictionary.com/twl06/download/twl06.txt';
 
 class Scrabble {
   board: ScrabbleBoard;
   specialTiles: SpecialTilesList;
+
+  constructor(length = 15, width = 15, specialTiles?: SpecialTilesList) {
+    this.board = Array.from({ length }, () =>
+      Array.from({ length: width }, () => ({}))
+    );
+    this.specialTiles = specialTiles ?? DEFAULT_SPECIAL_TILES;
+    this.resetBoard();
+    console.log(this.addWord('hello', [0, 0], 'LEFT_TO_RIGHT'));
+    console.log(this.board);
+  }
 
   resetBoard = () => {
     const length = this.board.length;
@@ -23,18 +43,66 @@ class Scrabble {
     }
   };
 
-  constructor(length = 15, width = 15, specialTiles?: SpecialTilesList) {
-    this.board = Array.from({ length }, () =>
-      Array.from({ length: width }, () => ({}))
-    );
-    this.specialTiles = specialTiles ?? defaultSpecialTiles;
-    this.resetBoard();
-  }
+  isValidWord = (word: string) => {
+    return this.getWords().includes(word);
+  };
+
+  addWord = (
+    word: string,
+    start: [number, number],
+    direction: 'TOP_TO_BOTTOM' | 'LEFT_TO_RIGHT' = 'LEFT_TO_RIGHT'
+  ): boolean => {
+    const chars = word.split('');
+    const [x, y] = start;
+    // Checks
+    if (
+      !/^[0-9]{1,2}$/.test(`${x}`) ||
+      !/^[0-9]{1,2}$/.test(`${y}`) ||
+      !(x >= 0 && x <= this.board[0].length) ||
+      !(y >= 0 && y <= this.board.length) ||
+      !isChars(chars) ||
+      !this.isValidWord(word)
+    ) {
+      console.log('Failed a check');
+      return false;
+    }
+
+    if (direction === 'LEFT_TO_RIGHT') {
+      // Check boundaries
+      if (x + word.length - 1 > this.board[0].length) {
+        return false;
+      }
+      // Add word
+      chars.forEach((char, index) => {
+        this.board[x][y + index].letter = char;
+      });
+    } else {
+      // Check boundaries
+      if (y + word.length - 1 > this.board.length) {
+        return false;
+      }
+      // Add word
+      chars.forEach((char, index) => {
+        this.board[x + index][y].letter = char;
+      });
+    }
+    return true;
+  };
+
+  calcWordScore = (word: string) => {
+    return word
+      .split('')
+      .reduce((score, letter) => (score += LETTER_VALUES[letter]), 0);
+  };
+
+  private getWords = () => {
+    return WORD_LIST.trim().split('\n');
+  };
 }
 
 export default Scrabble;
 
-const defaultSpecialTiles: SpecialTilesList = [
+const DEFAULT_SPECIAL_TILES: SpecialTilesList = [
   [[0, 0], 'triple-word'],
   [[7, 0], 'triple-word'],
   [[14, 0], 'triple-word'],

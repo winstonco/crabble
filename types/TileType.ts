@@ -30,6 +30,15 @@ export const isChar = (c: string): c is Char => {
   return /^[a-z]$/.test(c);
 };
 
+export const isChars = (word: string[]): word is Char[] => {
+  for (const letter of word) {
+    if (!isChar(letter)) {
+      return false;
+    }
+  }
+  return true;
+};
+
 type TileType =
   | 'triple-word'
   | 'double-word'
