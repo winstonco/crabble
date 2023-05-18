@@ -1,13 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, StyleSheet } from 'react-native';
-import ScrabbleBoard from '../types/ScrabbleBoard';
 import Cell from './Cell';
-import { AddWordFn } from '../types/ScrabbleFns';
+import { ScrabbleContext } from './ScrabbleContext';
 
-const Board: React.FC<{
-  board: ScrabbleBoard;
-  handleAddWord: AddWordFn;
-}> = ({ board, handleAddWord }) => {
+const Board: React.FC<{}> = () => {
+  const { board } = useContext(ScrabbleContext);
+
   return (
     <View style={styles.board}>
       {board.map((row, rowNum) => {
@@ -19,7 +17,6 @@ const Board: React.FC<{
                   cell={cell}
                   coords={[rowNum, index]}
                   key={`cell-${rowNum}-${index}`}
-                  handleAddWord={handleAddWord}
                 />
               );
             })}
@@ -32,7 +29,7 @@ const Board: React.FC<{
 
 const styles = StyleSheet.create({
   board: {
-    minWidth: 300,
+    minWidth: 600,
     maxWidth: 800,
     width: '80%',
     aspectRatio: '1 / 1',

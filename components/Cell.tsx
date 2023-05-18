@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   View,
   Modal,
@@ -11,20 +11,22 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import { useHover } from 'react-native-web-hooks';
 import ScrabbleCell from '../types/ScrabbleCell';
-import { AddWordFn } from '../types/ScrabbleFns';
 import WordDirection from '../types/WordDirection';
+import { ScrabbleContext } from './ScrabbleContext';
+import useCurrentPlayer from '../hooks/useCurrentPlayer';
 
 const Cell: React.FC<{
   cell: ScrabbleCell;
   coords: [number, number];
-  handleAddWord: AddWordFn;
-}> = ({ cell, coords, handleAddWord }) => {
+}> = ({ cell, coords }) => {
+  const scrabbleGame = useContext(ScrabbleContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [wordInput, setWordInput] = useState('');
   const [selectedDirection, setSelectedDirection] =
     useState<WordDirection>('LEFT_TO_RIGHT');
   const ref = useRef(null);
   const isHovered = useHover(ref);
+  const currentPlayer = useCurrentPlayer();
 
   const handlePressCell = () => {
     setModalVisible(true);
@@ -32,7 +34,13 @@ const Cell: React.FC<{
 
   const handleConfirm = () => {
     setModalVisible(false);
-    handleAddWord(wordInput, coords, selectedDirection);
+    setWordInput('');
+    scrabbleGame.emitter.emit('playWord', {
+      id: currentPlayer.id,
+      word: wordInput,
+      coords: coords,
+      direction: selectedDirection,
+    });
   };
 
   return (
@@ -74,9 +82,10 @@ const Cell: React.FC<{
               onValueChange={(itemValue) => {
                 setSelectedDirection(itemValue);
               }}
+              style={modalStyles.picker}
             >
-              <Picker.Item label="Left -> Right ➡️" value={'LEFT_TO_RIGHT'} />
-              <Picker.Item label="Top -> Bottom ⬇️" value={'TOP_TO_BOTTOM'} />
+              <Picker.Item label="Left to Right ➡️" value={'LEFT_TO_RIGHT'} />
+              <Picker.Item label="Top to Bottom ⬇️" value={'TOP_TO_BOTTOM'} />
             </Picker>
             <Pressable
               onPress={handleConfirm}
@@ -139,6 +148,13 @@ const modalStyles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 8,
     padding: 10,
+  },
+  picker: {
+    borderColor: 'black',
+    borderWidth: 2,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 20,
   },
   confirmButton: {
     textAlign: 'center',

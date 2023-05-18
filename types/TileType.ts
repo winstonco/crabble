@@ -39,10 +39,10 @@ export const isChars = (word: string[]): word is Char[] => {
   return true;
 };
 
-type TileType =
-  | 'triple-word'
-  | 'double-word'
-  | 'triple-letter'
-  | 'double-letter';
+type TileType = Char | ' ';
+
+export const isTile = (c: string): c is TileType => {
+  return /^[a-z]$/.test(c) || c === ' ';
+};
 
 export default TileType;
