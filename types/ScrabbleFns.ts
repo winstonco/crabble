@@ -1,4 +1,7 @@
+import TileType from './TileType';
 import WordDirection from './WordDirection';
+
+export type PlacedTile = { tile: TileType; x: number; y: number };
 
 export enum ReturnTypes {
   INVALID_WORD = -1,
@@ -15,3 +18,9 @@ export type AddWordHandler = (
   coords: [number, number],
   direction: WordDirection
 ) => any;
+
+export type CheckTilePlacementFn = (
+  placedTiles: PlacedTile[]
+) => [boolean, number];
+
+export type PlaceTileFn = (placedTile: PlacedTile) => boolean;

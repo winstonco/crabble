@@ -58,6 +58,9 @@ const Redraw: React.FC<{}> = () => {
       >
         <View style={modalStyles.centeredView}>
           <View style={modalStyles.container}>
+            <Text style={{ fontSize: 16 }}>
+              Select tiles below and press Redraw.
+            </Text>
             <Hand
               player={scrabbleGame.currentPlayer}
               onClickTile={handleClickTile}

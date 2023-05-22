@@ -1,9 +1,14 @@
 import { NativeEventEmitter } from 'react-native/types';
 import ScrabbleBoard from '../types/ScrabbleBoard';
-import TileType, { Char, isChars } from '../types/TileType';
+import TileType, { Char, isChar, isChars } from '../types/TileType';
 import WORD_LIST from './scrabble-word-list';
 import LETTER_VALUES from './letter-values.json';
-import { AddWordFn, ReturnTypes } from '../types/ScrabbleFns';
+import {
+  AddWordFn,
+  CheckTilePlacementFn,
+  PlaceTileFn,
+  ReturnTypes,
+} from '../types/ScrabbleFns';
 import ScrabbleCell from '../types/ScrabbleCell';
 import {
   DEFAULT_SPECIAL_TILES_LIST,
@@ -28,15 +33,20 @@ type ScrabbleOptions = {
 };
 
 class Scrabble {
+  /** board[y][x].tile is undefined if no tile on it */
   readonly board: ScrabbleBoard;
   readonly emitter: TypedNativeEventEmitter<GameEvents>;
   readonly piecesRemaining: TileType[];
   readonly players: Player[];
 
+  /** Starts at 1 */
   private _roundNumber: number;
+  /** Starts at 1 */
+  private _turnNumber: number;
   private currentPlayerIndex: number;
   private _isInGame: boolean;
   private specialTiles: SpecialTilesList;
+  private firstWordPlaced: boolean;
 
   constructor({
     length = 15,
@@ -46,6 +56,8 @@ class Scrabble {
     startingSpecialTiles = DEFAULT_SPECIAL_TILES_LIST,
     startingTileDistribution = DEFAULT_TILE_DISTRIBUTION,
   }: ScrabbleOptions) {
+    if (length % 2 === 0 || width % 2 === 0) return;
+
     // Set up event emitter
     this.emitter = new TypedNativeEventEmitter();
 
@@ -53,14 +65,15 @@ class Scrabble {
     this.board = Array.from({ length }, () =>
       Array.from({ length: width }, () => ({}))
     );
-    this.specialTiles = startingSpecialTiles ?? DEFAULT_SPECIAL_TILES_LIST;
+    this.specialTiles = startingSpecialTiles;
+    this.specialTiles.forEach(([coords, type]) => {
+      const [y, x] = coords;
+      this.board[x][y].type = type;
+    });
 
     // Set up bag
     this.piecesRemaining = (
-      Object.entries(startingTileDistribution ?? DEFAULT_TILE_DISTRIBUTION) as [
-        TileType,
-        number
-      ][]
+      Object.entries(startingTileDistribution) as [TileType, number][]
     ).flatMap(([tile, count]) => Array.from({ length: count }, () => tile));
     this.shufflePieces();
 
@@ -77,6 +90,8 @@ class Scrabble {
     // Set up initial game data
     this.currentPlayerIndex = 0;
     this._roundNumber = 0;
+    this._turnNumber = 0;
+    this.firstWordPlaced = false;
     this._isInGame = false;
 
     this.resetGame();
@@ -103,14 +118,9 @@ class Scrabble {
     const length = this.board.length;
     const width = this.board[0].length;
 
-    this.specialTiles.forEach(([coords, type]) => {
-      const [y, x] = coords;
-      this.board[x][y].type = type;
-    });
-
     for (let i = 0; i < length; i++) {
       for (let j = 0; j < width; j++) {
-        this.board[i][j].letter = undefined;
+        this.board[i][j].tile = undefined;
       }
     }
 
@@ -138,7 +148,10 @@ class Scrabble {
    * @returns The player that won or null.
    */
   playRound: () => Promise<Player | null> = async () => {
+    this._roundNumber++;
+
     for (let player of this.players) {
+      this._turnNumber++;
       if (player instanceof Bot) {
         await player.takeTurn();
       } else {
@@ -152,8 +165,6 @@ class Scrabble {
       this.currentPlayerIndex =
         (this.currentPlayerIndex + 1) % this.players.length;
     }
-
-    this._roundNumber++;
 
     return null;
   };
@@ -200,6 +211,195 @@ class Scrabble {
   };
 
   /**
+   * Calculate the score of a word.
+   *
+   * @param startLetterCoords [x, y] of the last letter.
+   * @param endLetterCoords [x, y] of the first letter.
+   * @returns The score of the word or -1 if failed.
+   */
+  calcWordScoreByCoords = (
+    word: string,
+    startLetterCoords: [number, number],
+    endLetterCoords: [number, number]
+  ): number => {
+    const [x1, y1] = startLetterCoords;
+    const [x2, y2] = endLetterCoords;
+
+    if (!this.isValidWord(word) || x2 < x1 || y2 < y1) {
+      return -1;
+    }
+
+    let wordScore = 0;
+    let wordMultiplier = 1;
+
+    const addLetter = (cell: ScrabbleCell, letter: Char) => {
+      let letterMultiplier = 1;
+      if (cell) {
+        switch (cell.type) {
+          case 'double-letter':
+            letterMultiplier = 2;
+            break;
+          case 'triple-letter':
+            letterMultiplier = 3;
+            break;
+          case 'double-word':
+            wordMultiplier = 2;
+            break;
+          case 'triple-word':
+            wordMultiplier = 3;
+            break;
+        }
+      }
+      wordScore += LETTER_VALUES[letter] * letterMultiplier;
+    };
+
+    if (y1 === y2) {
+      // Row
+      if (x2 - x1 + 1 !== word.length) {
+        return -1;
+      }
+      word.split('').forEach((letter, index) => {
+        if (isChar(letter)) {
+          addLetter(this.board[x1 + index][y1], letter);
+        }
+      });
+    } else if (x1 === x2) {
+      // Column
+      if (y2 - y1 + 1 !== word.length) {
+        return -1;
+      }
+      word.split('').forEach((letter, index) => {
+        if (isChar(letter)) {
+          addLetter(this.board[x1][y1 + index], letter);
+        }
+      });
+    } else {
+      return -1;
+    }
+
+    return wordScore * wordMultiplier;
+  };
+
+  /**
+   * If possible, places a tile on the board.
+   *
+   * @param placedTile The tile type and location of the placed tile.
+   * @returns True if the tile was added. False if it was not.
+   */
+  placeTile: PlaceTileFn = ({ tile, x, y }) => {
+    const xyRegex = /^[0-9]{1,2}$/;
+    const xIsValid = x >= 0 && x <= this.board[0].length;
+    const yIsValid = y >= 0 && y <= this.board.length;
+    if (
+      !xyRegex.test(`${x}`) ||
+      !xyRegex.test(`${y}`) ||
+      !xIsValid ||
+      !yIsValid
+    ) {
+      return false;
+    }
+    if (this.board[y][x].tile) {
+      return false;
+    }
+    this.board[y][x].tile = tile;
+  };
+
+  /**
+   * Checks if all placed tiles are in a row or column, that they
+   * make at least 1 word, and they don't make any invalid words.
+   *
+   * @param placedTiles The tiles to check.
+   * @returns True if the placed tiles are valid.
+   */
+  checkTilePlacement: CheckTilePlacementFn = (placedTiles) => {
+    const wordsAffected: {
+      word: string;
+      startCoords: [number, number];
+      endCoords: [number, number];
+    }[] = [];
+    let score = 0;
+    if (placedTiles.length > 1) {
+      const isRow = placedTiles.every(({ y }) => y === placedTiles[0].y);
+      const isCol = placedTiles.every(({ x }) => x === placedTiles[0].x);
+
+      // isRow XOR isCol
+      if (!((isRow || isCol) && !(isRow && isCol))) {
+        return [false, score];
+      }
+    }
+
+    let wordCreated = false;
+    let invalidWord = false;
+    placedTiles.forEach(({ x, y }) => {
+      // horizontal word created
+      let horizontalWordStartX = x;
+      while (this.board[y][horizontalWordStartX - 1]?.tile) {
+        horizontalWordStartX--;
+      }
+      let horizontalWord = this.board[y][horizontalWordStartX].tile;
+      let nextLetterX = horizontalWordStartX + 1;
+      while (this.board[y][nextLetterX]?.tile) {
+        horizontalWord += this.board[y][nextLetterX]?.tile;
+        nextLetterX++;
+      }
+      if (this.isValidWord(horizontalWord)) {
+        wordCreated = true;
+        const toAdd = {
+          word: horizontalWord,
+          startCoords: [horizontalWordStartX, y] as [number, number],
+          endCoords: [nextLetterX - 1, y] as [number, number],
+        };
+        if (
+          !wordsAffected.some(
+            ({ startCoords, endCoords }) =>
+              startCoords.every((num, i) => num === toAdd.startCoords[i]) &&
+              endCoords.every((num, i) => num === toAdd.endCoords[i])
+          )
+        ) {
+          wordsAffected.push(toAdd);
+        }
+      } else if (horizontalWord.length > 1) {
+        invalidWord = true;
+      }
+      // vertical word created
+      let verticalWordStartY = y;
+      while (this.board[verticalWordStartY - 1][x]?.tile) {
+        verticalWordStartY--;
+      }
+      let verticalWord = this.board[verticalWordStartY][x].tile;
+      let nextLetterY = verticalWordStartY + 1;
+      while (this.board[nextLetterY][x]?.tile) {
+        verticalWord += this.board[nextLetterY][x]?.tile;
+        nextLetterY++;
+      }
+      if (this.isValidWord(verticalWord)) {
+        wordCreated = true;
+        const toAdd = {
+          word: verticalWord,
+          startCoords: [x, verticalWordStartY] as [number, number],
+          endCoords: [x, nextLetterY - 1] as [number, number],
+        };
+        if (
+          !wordsAffected.some(
+            ({ startCoords, endCoords }) =>
+              startCoords.every((num, i) => num === toAdd.startCoords[i]) &&
+              endCoords.every((num, i) => num === toAdd.endCoords[i])
+          )
+        ) {
+          wordsAffected.push(toAdd);
+        }
+      } else if (verticalWord.length > 1) {
+        invalidWord = true;
+      }
+    });
+
+    wordsAffected.forEach(({ word, startCoords, endCoords }) => {
+      score += this.calcWordScoreByCoords(word, startCoords, endCoords);
+    });
+    return [wordCreated && !invalidWord, score];
+  };
+
+  /**
    * Adds a word to the board.
    *
    * @returns -1 if the add fails. Otherwise, returns the value of the added word.
@@ -225,12 +425,12 @@ class Scrabble {
     let wordScore = 0;
     let wordMultiplier = 1;
 
-    const addLetter = (tile: ScrabbleCell, letter: Char) => {
-      tile.letter = letter;
+    const addLetter = (cell: ScrabbleCell, letter: Char) => {
+      cell.tile = letter;
 
       let letterMultiplier = 1;
-      if (tile) {
-        switch (tile.type) {
+      if (cell) {
+        switch (cell.type) {
           case 'double-letter':
             letterMultiplier = 2;
             break;
@@ -249,21 +449,56 @@ class Scrabble {
     };
 
     if (direction === 'LEFT_TO_RIGHT') {
-      // Check boundaries
-      if (x + word.length > this.board[0].length) {
+      const wordIsOutOfBounds = x + word.length > this.board[0].length;
+      const wordIsAdjacentToAnother =
+        this.board[y][x - 1]?.tile !== undefined ||
+        chars.some(
+          (_, index) =>
+            this.board[y + 1][x + index]?.tile !== undefined ||
+            this.board[y - 1][x + index]?.tile !== undefined
+        ) ||
+        this.board[y][x + word.length]?.tile !== undefined;
+      const firstWordOnCenter = chars.some(
+        (_, index) =>
+          x + index === (this.board[0].length - 1) / 2 &&
+          y === (this.board.length - 1) / 2
+      );
+      if (
+        wordIsOutOfBounds ||
+        (this.firstWordPlaced && !wordIsAdjacentToAnother) ||
+        (!this.firstWordPlaced && !firstWordOnCenter)
+      ) {
         return ReturnTypes.INVALID_WORD;
       }
       // Add word
       chars.forEach((char, index) => addLetter(this.board[y][x + index], char));
     } else {
-      // Check boundaries
-      if (y + word.length > this.board.length) {
+      const wordIsOutOfBounds = y + word.length > this.board.length;
+      const wordIsAdjacentToAnother =
+        this.board[y - 1][x]?.tile !== undefined ||
+        chars.some(
+          (_, index) =>
+            this.board[y + index][x + 1]?.tile !== undefined ||
+            this.board[y + index][x - 1]?.tile !== undefined
+        ) ||
+        this.board[y + word.length][x]?.tile !== undefined;
+      const firstWordOnCenter = chars.some(
+        (_, index) =>
+          x === (this.board[0].length - 1) / 2 &&
+          y + index === (this.board.length - 1) / 2
+      );
+      if (
+        wordIsOutOfBounds ||
+        (this.firstWordPlaced && !wordIsAdjacentToAnother) ||
+        (!this.firstWordPlaced && !firstWordOnCenter)
+      ) {
         return ReturnTypes.INVALID_WORD;
       }
       // Add word
       chars.forEach((char, index) => addLetter(this.board[y + index][x], char));
     }
 
+    this.firstWordPlaced = true;
     return wordScore * wordMultiplier;
   };
 
@@ -273,6 +508,10 @@ class Scrabble {
 
   get roundNumber() {
     return this._roundNumber;
+  }
+
+  get turnNumber() {
+    return this._turnNumber;
   }
 
   get currentPlayer() {

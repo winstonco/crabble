@@ -6,8 +6,10 @@ import Redraw from './Redraw';
 import Player from '../scrabble/Player';
 import { GameEventHandler } from '../types/GameEvents';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
+import TileType from '../types/TileType';
 
 const GameBottomBar = () => {
+  const [idxTileSelected, setIdxTileSelected] = useState(-1);
   const scrabbleGame = useContext(ScrabbleContext);
   const currentPlayer = useCurrentPlayer();
 
@@ -16,10 +18,29 @@ const GameBottomBar = () => {
     console.log(currentPlayer.name);
   };
 
+  const handleSwitchTile = (tileType: TileType, index: number) => {
+    if (idxTileSelected === -1) {
+      setIdxTileSelected(index);
+    } else if (idxTileSelected === index) {
+      setIdxTileSelected(-1);
+    } else {
+      // Switch them
+      let temp = currentPlayer.hand[idxTileSelected];
+      currentPlayer.hand[idxTileSelected] = currentPlayer.hand[index];
+      currentPlayer.hand[index] = temp;
+      setIdxTileSelected(-1);
+    }
+  };
+
+  const handleConfirmPlacement = () => {
+    currentPlayer.confirmPlacedTiles();
+  };
+
   return (
     <View style={styles.bar}>
       <Button onPress={handlePass} title="Pass" />
-      <Hand player={currentPlayer} />
+      <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
+      <Button onPress={handleConfirmPlacement} title="Confirm Placement" />
       <Redraw />
     </View>
   );

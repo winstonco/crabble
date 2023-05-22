@@ -1,4 +1,4 @@
-import TileType, { Char } from './TileType';
+import TileType from './TileType';
 
 export type CellType =
   | 'triple-word'
@@ -8,7 +8,7 @@ export type CellType =
 
 export type ScrabbleCell = {
   type?: CellType;
-  letter?: Char;
+  tile?: TileType;
 };
 
 export default ScrabbleCell;

@@ -99,4 +99,4 @@ export const DEFAULT_TILE_DISTRIBUTION: TileDistribution = {
   z: 1,
 };
 
-export const DEFAULT_TURN_LENGTH = 20000;
+export const DEFAULT_TURN_LENGTH = 60_000;

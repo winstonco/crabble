@@ -1,17 +1,18 @@
 import { nanoid } from 'nanoid';
 
-import { AddWordHandler, ReturnTypes } from '../types/ScrabbleFns';
+import { AddWordHandler, PlacedTile, ReturnTypes } from '../types/ScrabbleFns';
 import TileType, { isTile } from '../types/TileType';
 import Scrabble from './Scrabble';
 
 type TurnEndCallback = () => void;
 
 class Player {
-  scrabbleGame: Scrabble;
-  id: string;
+  readonly scrabbleGame: Scrabble;
+  readonly id: string;
   name: string;
   score: number;
   hand: TileType[];
+  placedTiles: PlacedTile[];
   isTakingTurn: boolean;
   turnEndCallback: TurnEndCallback;
   turnTimeoutId: NodeJS.Timeout;
@@ -25,6 +26,7 @@ class Player {
     for (let _ of Array(7)) {
       this.hand.push(this.scrabbleGame.drawPiece());
     }
+    this.placedTiles = [];
     this.isTakingTurn = false;
     this.initEventListeners();
   }
@@ -50,6 +52,27 @@ class Player {
         this.endTurn();
       }, turnTime);
     });
+  };
+
+  /**
+   * Take the turn to place tiles on the board.
+   *
+   * @returns True if it was successful, false if not.
+   */
+  confirmPlacedTiles = (): boolean => {
+    console.log(this.placedTiles);
+    console.log(this.scrabbleGame.checkTilePlacement(this.placedTiles));
+    return false;
+  };
+
+  /**
+   * Adds a tile to the tiles placed list.
+   *
+   * @param placedTile The tile type and location of the tile placed.
+   */
+  placeTile = (placedTile: PlacedTile) => {
+    this.placedTiles.push(placedTile);
+    this.scrabbleGame.placeTile(placedTile);
   };
 
   /**

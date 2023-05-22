@@ -15,7 +15,7 @@ const Board: React.FC<{}> = () => {
               return (
                 <Cell
                   cell={cell}
-                  coords={[rowNum, index]}
+                  coords={[index, rowNum]}
                   key={`cell-${rowNum}-${index}`}
                 />
               );

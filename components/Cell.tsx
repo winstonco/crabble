@@ -14,6 +14,7 @@ import ScrabbleCell from '../types/ScrabbleCell';
 import WordDirection from '../types/WordDirection';
 import { ScrabbleContext } from './ScrabbleContext';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
+import Hand, { ClickTileHandler } from './Hand';
 
 const Cell: React.FC<{
   cell: ScrabbleCell;
@@ -43,6 +44,16 @@ const Cell: React.FC<{
     });
   };
 
+  const handleClickTile: ClickTileHandler = (tile) => {
+    currentPlayer.placeTile({ tile, x: coords[0], y: coords[1] });
+    setModalVisible(false);
+    console.log({ tile, x: coords[0], y: coords[1] });
+  };
+
+  const handleClose = () => {
+    setModalVisible(false);
+  };
+
   return (
     <>
       <Pressable
@@ -56,7 +67,7 @@ const Cell: React.FC<{
           },
         ]}
       >
-        <Text style={styles.text}>{cell.letter?.toUpperCase()}</Text>
+        <Text style={styles.text}>{cell.tile?.toUpperCase()}</Text>
       </Pressable>
       <Modal
         animationType="slide"
@@ -69,15 +80,20 @@ const Cell: React.FC<{
       >
         <View style={modalStyles.centeredBottomView}>
           <View style={modalStyles.enterWordContainer}>
-            <SafeAreaView>
+            {/* <SafeAreaView>
               <TextInput
                 value={wordInput}
                 onChangeText={setWordInput}
                 placeholder="Enter word"
                 style={modalStyles.textInput}
               />
-            </SafeAreaView>
-            <Picker
+            </SafeAreaView> */}
+            <Text>Place a tile in this cell</Text>
+            <Hand player={currentPlayer} onClickTile={handleClickTile} />
+            <Pressable onPress={handleClose}>
+              <Text>Nevermind</Text>
+            </Pressable>
+            {/* <Picker
               selectedValue={selectedDirection}
               onValueChange={(itemValue) => {
                 setSelectedDirection(itemValue);
@@ -86,13 +102,13 @@ const Cell: React.FC<{
             >
               <Picker.Item label="Left to Right ➡️" value={'LEFT_TO_RIGHT'} />
               <Picker.Item label="Top to Bottom ⬇️" value={'TOP_TO_BOTTOM'} />
-            </Picker>
-            <Pressable
+            </Picker> */}
+            {/* <Pressable
               onPress={handleConfirm}
               style={modalStyles.confirmButton}
             >
               <Text style={{ fontSize: 24, color: 'white' }}>Confirm</Text>
-            </Pressable>
+            </Pressable> */}
           </View>
         </View>
       </Modal>
