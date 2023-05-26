@@ -43,7 +43,7 @@ const Hand: React.FC<{
 
   useEffect(() => {
     const handleUpdateHand = () => {
-      setUpdate((update) => !update);
+      setUpdate(!update);
     };
 
     const updateHandSub = scrabbleGame.emitter.addListener(
