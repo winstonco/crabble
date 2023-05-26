@@ -60,9 +60,22 @@ class Player {
    * @returns True if it was successful, false if not.
    */
   confirmPlacedTiles = (): boolean => {
-    console.log(this.placedTiles);
-    console.log(this.scrabbleGame.checkTilePlacement(this.placedTiles));
+    const placementSuccessful = this.scrabbleGame.checkTilePlacement(
+      this.placedTiles
+    );
+    console.log(placementSuccessful);
+    if (placementSuccessful) {
+      return true;
+    }
+    this.revertPlacedTiles();
     return false;
+  };
+
+  private revertPlacedTiles = (): void => {
+    for (let i = 0; i < this.placedTiles.length; i++) {
+      const tile = this.placedTiles.shift().tile;
+      this.hand.push(tile);
+    }
   };
 
   /**
@@ -71,6 +84,12 @@ class Player {
    * @param placedTile The tile type and location of the tile placed.
    */
   placeTile = (placedTile: PlacedTile) => {
+    const idx = this.hand.indexOf(placedTile.tile);
+    if (idx === -1) {
+      return;
+    }
+    this.hand.splice(idx, 1);
+    this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
     this.placedTiles.push(placedTile);
     this.scrabbleGame.placeTile(placedTile);
   };

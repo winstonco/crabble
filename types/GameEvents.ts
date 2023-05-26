@@ -2,6 +2,7 @@ import TileType from './TileType';
 import WordDirection from './WordDirection';
 
 type GameEvents = {
+  updateHand: [{ id: string }];
   startTurn: [
     {
       id: string;
