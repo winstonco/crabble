@@ -1,17 +1,17 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Button } from 'react-native';
 import Hand from './Hand';
 import { ScrabbleContext } from './ScrabbleContext';
 import Redraw from './Redraw';
-import Player from '../scrabble/Player';
-import { GameEventHandler } from '../types/GameEvents';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 import TileType from '../types/TileType';
+import useUpdate from '../hooks/useUpdate';
 
 const GameBottomBar = () => {
   const [idxTileSelected, setIdxTileSelected] = useState(-1);
   const scrabbleGame = useContext(ScrabbleContext);
   const currentPlayer = useCurrentPlayer();
+  useUpdate();
 
   const handlePass = () => {
     scrabbleGame.emitter.emit('pass', { id: currentPlayer.id });
@@ -37,23 +37,30 @@ const GameBottomBar = () => {
   };
 
   return (
-    <View style={styles.bar}>
-      <Button onPress={handlePass} title="Pass" />
-      <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
-      <Button onPress={handleConfirmPlacement} title="Confirm Placement" />
-      <Redraw />
+    <View style={styles.container}>
+      <View style={styles.row}>
+        <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
+      </View>
+      <View style={styles.row}>
+        <Redraw />
+        <Button onPress={handleConfirmPlacement} title="Confirm Placement" />
+        <Button onPress={handlePass} title="Pass" />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  bar: {
+  container: {
     width: '100%',
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 20,
-    marginBottom: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
   },
 });
 

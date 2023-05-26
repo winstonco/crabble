@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 
-import { AddWordHandler, PlacedTile, ReturnTypes } from '../types/ScrabbleFns';
+import sfns from '../types/ScrabbleFns';
 import TileType, { isTile } from '../types/TileType';
 import Scrabble from './Scrabble';
 
@@ -12,7 +12,7 @@ class Player {
   name: string;
   score: number;
   hand: TileType[];
-  placedTiles: PlacedTile[];
+  placedTiles: sfns.PlacedTile[];
   isTakingTurn: boolean;
   turnEndCallback: TurnEndCallback;
   turnTimeoutId: NodeJS.Timeout;
@@ -60,11 +60,13 @@ class Player {
    * @returns True if it was successful, false if not.
    */
   confirmPlacedTiles = (): boolean => {
-    const placementSuccessful = this.scrabbleGame.checkTilePlacement(
+    const [placementSuccessful, score] = this.scrabbleGame.checkTilePlacement(
       this.placedTiles
     );
     console.log(placementSuccessful);
     if (placementSuccessful) {
+      this.endTurn();
+      this.score += score;
       return true;
     }
     this.revertPlacedTiles();
@@ -72,9 +74,13 @@ class Player {
   };
 
   private revertPlacedTiles = (): void => {
-    for (let i = 0; i < this.placedTiles.length; i++) {
-      const tile = this.placedTiles.shift().tile;
-      this.hand.push(tile);
+    console.log(this.placedTiles);
+    while (this.placedTiles.length > 0) {
+      const placedTileToRevert = this.placedTiles.shift();
+      const revertedTile = this.scrabbleGame.removeTile(placedTileToRevert);
+      if (revertedTile) {
+        this.hand.push(revertedTile);
+      }
     }
   };
 
@@ -83,7 +89,7 @@ class Player {
    *
    * @param placedTile The tile type and location of the tile placed.
    */
-  placeTile = (placedTile: PlacedTile) => {
+  placeTile = (placedTile: sfns.PlacedTile) => {
     const idx = this.hand.indexOf(placedTile.tile);
     if (idx === -1) {
       return;
@@ -102,7 +108,7 @@ class Player {
    * @param direction TOP_TO_BOTTOM | LEFT_TO_RIGHT
    * @returns True if it was successful, false if not.
    */
-  playWord: AddWordHandler = (word, ...args): boolean => {
+  playWord: sfns.AddWordHandler = (word, ...args): boolean => {
     if (!this.isTakingTurn) {
       return false;
     }
@@ -118,7 +124,7 @@ class Player {
       foundLetters[letter] = idx;
     }
     const wordScore = this.scrabbleGame.addWord(word, ...args);
-    if (wordScore === ReturnTypes.INVALID_WORD) {
+    if (wordScore === sfns.ReturnTypes.INVALID_WORD) {
       return false;
     }
     this.score += wordScore;
@@ -176,12 +182,23 @@ class Player {
     return true;
   };
 
+  private drawToFull = () => {
+    while (
+      this.hand.length < 7 &&
+      this.scrabbleGame.piecesRemaining.length > 0
+    ) {
+      const piece = this.scrabbleGame.drawPiece();
+      this.hand.push(piece);
+    }
+  };
+
   private endTurn = () => {
     if (this.turnTimeoutId) {
       clearTimeout(this.turnTimeoutId);
     }
     this.turnTimeoutId = null;
     this.isTakingTurn = false;
+    this.drawToFull();
     this.turnEndCallback?.();
     console.log(`${this.name}'s Turn Ended`);
   };

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 
 import Player from '../scrabble/Player';
 import TileType from '../types/TileType';
-import { ScrabbleContext } from './ScrabbleContext';
+import useUpdate from '../hooks/useUpdate';
 
 export type ClickTileHandler = (
   tile: TileType,
@@ -38,23 +38,6 @@ const Hand: React.FC<{
   onClickTile?: ClickTileHandler;
 }> = ({ player, onClickTile }) => {
   const hand = player.hand;
-  const [update, setUpdate] = useState(false);
-  const scrabbleGame = useContext(ScrabbleContext);
-
-  useEffect(() => {
-    const handleUpdateHand = () => {
-      setUpdate(!update);
-    };
-
-    const updateHandSub = scrabbleGame.emitter.addListener(
-      'updateHand',
-      handleUpdateHand
-    );
-
-    return () => {
-      updateHandSub.remove();
-    };
-  }, []);
 
   return (
     <View style={styles.hand}>

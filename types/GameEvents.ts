@@ -1,4 +1,5 @@
 import TileType from './TileType';
+import sfns from './ScrabbleFns';
 import WordDirection from './WordDirection';
 
 type GameEvents = {
@@ -9,6 +10,8 @@ type GameEvents = {
       turnLength: number;
     }
   ];
+  placeTile: [];
+  removeTile: [];
   playWord: [
     {
       id: string;

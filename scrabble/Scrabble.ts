@@ -1,14 +1,8 @@
-import { NativeEventEmitter } from 'react-native/types';
 import ScrabbleBoard from '../types/ScrabbleBoard';
 import TileType, { Char, isChar, isChars } from '../types/TileType';
 import WORD_LIST from './scrabble-word-list';
 import LETTER_VALUES from './letter-values.json';
-import {
-  AddWordFn,
-  CheckTilePlacementFn,
-  PlaceTileFn,
-  ReturnTypes,
-} from '../types/ScrabbleFns';
+import sfns from '../types/ScrabbleFns';
 import ScrabbleCell from '../types/ScrabbleCell';
 import {
   DEFAULT_SPECIAL_TILES_LIST,
@@ -286,7 +280,7 @@ class Scrabble {
    * @param placedTile The tile type and location of the placed tile.
    * @returns True if the tile was added. False if it was not.
    */
-  placeTile: PlaceTileFn = ({ tile, x, y }) => {
+  placeTile: sfns.PlaceTileFn = ({ tile, x, y }) => {
     const xyRegex = /^[0-9]{1,2}$/;
     const xIsValid = x >= 0 && x <= this.board[0].length;
     const yIsValid = y >= 0 && y <= this.board.length;
@@ -301,7 +295,32 @@ class Scrabble {
     if (this.board[y][x].tile) {
       return false;
     }
+    this.emitter.emit('placeTile');
     this.board[y][x].tile = tile;
+  };
+
+  removeTile: sfns.RemoveTileFn = ({ tile, x, y }) => {
+    const xyRegex = /^[0-9]{1,2}$/;
+    const xIsValid = x >= 0 && x <= this.board[0].length;
+    const yIsValid = y >= 0 && y <= this.board.length;
+    if (
+      !xyRegex.test(`${x}`) ||
+      !xyRegex.test(`${y}`) ||
+      !xIsValid ||
+      !yIsValid
+    ) {
+      return false;
+    }
+    if (!this.board[y][x].tile) {
+      return false;
+    }
+    const pickedUp = this.board[y][x].tile;
+    this.board[y][x].tile = undefined;
+    if (tile !== pickedUp) {
+      return false;
+    }
+    this.emitter.emit('removeTile');
+    return pickedUp;
   };
 
   /**
@@ -309,9 +328,11 @@ class Scrabble {
    * make at least 1 word, and they don't make any invalid words.
    *
    * @param placedTiles The tiles to check.
-   * @returns True if the placed tiles are valid.
+   * @returns An array containing\
+   * [0] A boolean of whether the placed tiles are valid.\
+   * [1] The score of the placed tiles.
    */
-  checkTilePlacement: CheckTilePlacementFn = (placedTiles) => {
+  checkTilePlacement: sfns.CheckTilePlacementFn = (placedTiles) => {
     const wordsAffected: {
       word: string;
       startCoords: [number, number];
@@ -319,11 +340,15 @@ class Scrabble {
     }[] = [];
     let score = 0;
     if (placedTiles.length > 1) {
+      const tileOnCenter = placedTiles.some(({ x, y }) => x === 7 && y === 7);
       const isRow = placedTiles.every(({ y }) => y === placedTiles[0].y);
       const isCol = placedTiles.every(({ x }) => x === placedTiles[0].x);
 
       // isRow XOR isCol
-      if (!((isRow || isCol) && !(isRow && isCol))) {
+      if (
+        !((isRow || isCol) && !(isRow && isCol)) ||
+        (!this.firstWordPlaced && !tileOnCenter)
+      ) {
         return [false, score];
       }
     }
@@ -331,7 +356,7 @@ class Scrabble {
     let wordCreated = false;
     let invalidWord = false;
     placedTiles.forEach(({ x, y }) => {
-      // horizontal word created
+      // check for any horizontal word created from this tile
       let horizontalWordStartX = x;
       while (this.board[y][horizontalWordStartX - 1]?.tile) {
         horizontalWordStartX--;
@@ -361,7 +386,7 @@ class Scrabble {
       } else if (horizontalWord.length > 1) {
         invalidWord = true;
       }
-      // vertical word created
+      // check for any vertical word created from this tile
       let verticalWordStartY = y;
       while (this.board[verticalWordStartY - 1][x]?.tile) {
         verticalWordStartY--;
@@ -393,10 +418,14 @@ class Scrabble {
       }
     });
 
-    wordsAffected.forEach(({ word, startCoords, endCoords }) => {
-      score += this.calcWordScoreByCoords(word, startCoords, endCoords);
-    });
-    return [wordCreated && !invalidWord, score];
+    if (wordCreated && !invalidWord) {
+      wordsAffected.forEach(({ word, startCoords, endCoords }) => {
+        score += this.calcWordScoreByCoords(word, startCoords, endCoords);
+      });
+      this.firstWordPlaced = true;
+      return [true, score];
+    }
+    return [false, 0];
   };
 
   /**
@@ -404,7 +433,7 @@ class Scrabble {
    *
    * @returns -1 if the add fails. Otherwise, returns the value of the added word.
    */
-  addWord: AddWordFn = (word, start, direction): number => {
+  addWord: sfns.AddWordFn = (word, start, direction): number => {
     const chars = word.split('');
     const [y, x] = start;
     // Checks
@@ -419,7 +448,7 @@ class Scrabble {
       !isChars(chars) ||
       !this.isValidWord(word)
     ) {
-      return ReturnTypes.INVALID_WORD;
+      return sfns.ReturnTypes.INVALID_WORD;
     }
 
     let wordScore = 0;
@@ -468,7 +497,7 @@ class Scrabble {
         (this.firstWordPlaced && !wordIsAdjacentToAnother) ||
         (!this.firstWordPlaced && !firstWordOnCenter)
       ) {
-        return ReturnTypes.INVALID_WORD;
+        return sfns.ReturnTypes.INVALID_WORD;
       }
       // Add word
       chars.forEach((char, index) => addLetter(this.board[y][x + index], char));
@@ -492,7 +521,7 @@ class Scrabble {
         (this.firstWordPlaced && !wordIsAdjacentToAnother) ||
         (!this.firstWordPlaced && !firstWordOnCenter)
       ) {
-        return ReturnTypes.INVALID_WORD;
+        return sfns.ReturnTypes.INVALID_WORD;
       }
       // Add word
       chars.forEach((char, index) => addLetter(this.board[y + index][x], char));
