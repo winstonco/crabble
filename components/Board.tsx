@@ -3,7 +3,6 @@ import { View, StyleSheet, FlatList } from 'react-native';
 import Cell from './Cell';
 import { ScrabbleContext } from './ScrabbleProvider';
 import useUpdate from '../hooks/useUpdate';
-import DraggableTile from './DraggableTile';
 import CellOverlay from './CellOverlay';
 
 const Board: React.FC<{}> = () => {
@@ -12,21 +11,6 @@ const Board: React.FC<{}> = () => {
 
   return (
     <View style={styles.container}>
-      {/* {board.map((row, rowNum) => {
-        return (
-          <View style={{ flexDirection: 'row' }} key={`row-${rowNum}`}>
-            {row.map((cell, index) => {
-              return (
-                <Cell
-                  cell={cell}
-                  coords={[index, rowNum]}
-                  key={`cell-${rowNum}-${index}`}
-                />
-              );
-            })}
-          </View>
-        );
-      })} */}
       <FlatList
         style={[styles.board]}
         data={board.flat()}
@@ -41,7 +25,7 @@ const Board: React.FC<{}> = () => {
         }}
         numColumns={board[0].length}
         extraData={board}
-        key={board.length}
+        key={`board-${board.length}`}
       />
       <FlatList
         style={[styles.board, styles.overlay]}
@@ -53,28 +37,11 @@ const Board: React.FC<{}> = () => {
             Math.floor(index / board[0].length),
           ];
 
-          return (
-            <>
-              {/* {cell.tile && (
-                <DraggableTile
-                  tile={cell.tile}
-                  payload={{
-                    placedTile: {
-                      tile: cell.tile,
-                      x: coords[0],
-                      y: coords[1],
-                    },
-                  }}
-                  draggable={turnPlaced === scrabbleGame.turnNumber}
-                />
-              )} */}
-              <CellOverlay cell={cell} coords={coords} />
-            </>
-          );
+          return <CellOverlay cell={cell} coords={coords} />;
         }}
         numColumns={board[0].length}
         extraData={board}
-        key={board.length}
+        key={`board-overlay-${board.length}`}
       />
     </View>
   );

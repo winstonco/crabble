@@ -5,7 +5,7 @@ import {
   NativeSyntheticEvent,
   PanResponderInstance,
 } from 'react-native';
-import { DragEventsContext } from '../components/DragProvider';
+import { DragEventsContext } from '../components/DragEventsProvider';
 import { DragEventId } from '../types/DragEvents';
 import Measurable from '../types/Measurable';
 

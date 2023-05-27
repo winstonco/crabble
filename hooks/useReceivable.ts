@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from 'react';
-import { DragEventsContext } from '../components/DragProvider';
+import { DragEventsContext } from '../components/DragEventsProvider';
 import Measurable from '../types/Measurable';
 
 type UseReceivableConfigs = {
