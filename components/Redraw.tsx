@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { StyleSheet, Button, Modal, View, Text, Pressable } from 'react-native';
-import { ScrabbleContext } from './ScrabbleContext';
+import { ScrabbleContext } from './ScrabbleProvider';
 import TileType from '../types/TileType';
 import Hand, { ClickTileHandler } from './Hand';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
@@ -12,10 +12,11 @@ const Redraw: React.FC<{}> = () => {
   const currentPlayer = useCurrentPlayer();
 
   const redraw = (pieces: TileType[]) => {
-    scrabbleGame.emitter.emit('redraw', {
-      id: currentPlayer.id,
-      pieces: pieces,
-    });
+    // scrabbleGame.emitter.emit('redraw', {
+    //   id: currentPlayer.id,
+    //   pieces: pieces,
+    // });
+    currentPlayer.redraw(pieces);
   };
 
   const handlePress = () => {

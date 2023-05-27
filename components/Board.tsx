@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Cell from './Cell';
-import { ScrabbleContext } from './ScrabbleContext';
+import { ScrabbleContext } from './ScrabbleProvider';
 import useUpdate from '../hooks/useUpdate';
 
 const Board: React.FC<{}> = () => {

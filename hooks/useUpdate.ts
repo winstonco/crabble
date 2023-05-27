@@ -1,6 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
-import { ScrabbleContext } from '../components/ScrabbleContext';
+import { ScrabbleContext } from '../components/ScrabbleProvider';
 
+/**
+ * A hook to rerender on receiving game events.
+ *
+ * @param id (Optional) The id of the player for hand updates.
+ */
 const useUpdate = (id?: string) => {
   const scrabbleGame = useContext(ScrabbleContext);
   const [_, setUpdate] = useState(false);

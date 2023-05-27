@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Pressable, Text } from 'react-native';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import Player from '../scrabble/Player';
 import TileType from '../types/TileType';
 import useUpdate from '../hooks/useUpdate';
+import DraggableTile from './DraggableTile';
 
 export type ClickTileHandler = (
   tile: TileType,
@@ -11,42 +12,20 @@ export type ClickTileHandler = (
   selected: boolean
 ) => void;
 
-const HandTile: React.FC<{
-  tile: TileType;
-  indexInHand: number;
-  onClick?: ClickTileHandler;
-}> = ({ tile, indexInHand, onClick }) => {
-  const [selected, setSelected] = useState(false);
-
-  const handlePressHandTile = () => {
-    setSelected(!selected);
-    onClick?.(tile, indexInHand, !selected);
-  };
-
-  return (
-    <Pressable
-      onPress={handlePressHandTile}
-      style={[styles.cell, selected && styles.selected]}
-    >
-      <Text style={styles.text}>{tile?.toUpperCase()}</Text>
-    </Pressable>
-  );
-};
-
 const Hand: React.FC<{
   player: Player;
   onClickTile?: ClickTileHandler;
 }> = ({ player, onClickTile }) => {
+  useUpdate(player.id);
   const hand = player.hand;
 
   return (
     <View style={styles.hand}>
       {hand.map((tileType, idx) => (
-        <HandTile
+        <DraggableTile
           key={`${tileType}-${idx}`}
           tile={tileType}
           indexInHand={idx}
-          onClick={onClickTile}
         />
       ))}
     </View>
@@ -62,21 +41,5 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderColor: 'black',
-  },
-  cell: {
-    width: 30,
-    aspectRatio: '1 / 1',
-    backgroundColor: 'rgb(255, 223, 97)',
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selected: {
-    borderColor: 'rgb(255, 77, 0)',
-    borderWidth: 2,
-  },
-  text: {
-    lineHeight: 0,
-    fontSize: 20,
   },
 });

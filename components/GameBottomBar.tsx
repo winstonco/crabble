@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Button } from 'react-native';
 import Hand from './Hand';
-import { ScrabbleContext } from './ScrabbleContext';
+import { ScrabbleContext } from './ScrabbleProvider';
 import Redraw from './Redraw';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 import TileType from '../types/TileType';
@@ -14,7 +14,8 @@ const GameBottomBar = () => {
   useUpdate();
 
   const handlePass = () => {
-    scrabbleGame.emitter.emit('pass', { id: currentPlayer.id });
+    // scrabbleGame.emitter.emit('pass', { id: currentPlayer.id });
+    currentPlayer.passTurn();
     console.log(currentPlayer.name);
   };
 

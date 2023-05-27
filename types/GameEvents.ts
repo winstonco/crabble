@@ -39,8 +39,6 @@ type GameEvents = {
   ];
 };
 
-// TO ME: Add the correct events here for playing a word, redrawing, or passing. Then add in Player.ts the listener for those. Then make the events get fired in app/index.tsx.
-
 export type GameEventHandler<TEventName extends keyof GameEvents> = (
   ...args: GameEvents[TEventName]
 ) => void;

@@ -1,18 +1,8 @@
 import React, { useState, useRef, useContext } from 'react';
-import {
-  View,
-  Modal,
-  SafeAreaView,
-  TextInput,
-  Pressable,
-  Text,
-  StyleSheet,
-} from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Modal, Pressable, Text, StyleSheet } from 'react-native';
 import { useHover } from 'react-native-web-hooks';
 import ScrabbleCell from '../types/ScrabbleCell';
-import WordDirection from '../types/WordDirection';
-import { ScrabbleContext } from './ScrabbleContext';
+import { ScrabbleContext } from './ScrabbleProvider';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 import Hand, { ClickTileHandler } from './Hand';
 
@@ -22,26 +12,12 @@ const Cell: React.FC<{
 }> = ({ cell, coords }) => {
   const scrabbleGame = useContext(ScrabbleContext);
   const [modalVisible, setModalVisible] = useState(false);
-  const [wordInput, setWordInput] = useState('');
-  const [selectedDirection, setSelectedDirection] =
-    useState<WordDirection>('LEFT_TO_RIGHT');
   const ref = useRef(null);
   const isHovered = useHover(ref);
   const currentPlayer = useCurrentPlayer();
 
   const handlePressCell = () => {
     setModalVisible(true);
-  };
-
-  const handleConfirm = () => {
-    setModalVisible(false);
-    setWordInput('');
-    scrabbleGame.emitter.emit('playWord', {
-      id: currentPlayer.id,
-      word: wordInput,
-      coords: coords,
-      direction: selectedDirection,
-    });
   };
 
   const handleClickTile: ClickTileHandler = (tile) => {
@@ -80,35 +56,11 @@ const Cell: React.FC<{
       >
         <View style={modalStyles.centeredBottomView}>
           <View style={modalStyles.enterWordContainer}>
-            {/* <SafeAreaView>
-              <TextInput
-                value={wordInput}
-                onChangeText={setWordInput}
-                placeholder="Enter word"
-                style={modalStyles.textInput}
-              />
-            </SafeAreaView> */}
             <Text>Place a tile in this cell</Text>
             <Hand player={currentPlayer} onClickTile={handleClickTile} />
             <Pressable onPress={handleClose}>
               <Text>Nevermind</Text>
             </Pressable>
-            {/* <Picker
-              selectedValue={selectedDirection}
-              onValueChange={(itemValue) => {
-                setSelectedDirection(itemValue);
-              }}
-              style={modalStyles.picker}
-            >
-              <Picker.Item label="Left to Right ➡️" value={'LEFT_TO_RIGHT'} />
-              <Picker.Item label="Top to Bottom ⬇️" value={'TOP_TO_BOTTOM'} />
-            </Picker> */}
-            {/* <Pressable
-              onPress={handleConfirm}
-              style={modalStyles.confirmButton}
-            >
-              <Text style={{ fontSize: 24, color: 'white' }}>Confirm</Text>
-            </Pressable> */}
           </View>
         </View>
       </Modal>

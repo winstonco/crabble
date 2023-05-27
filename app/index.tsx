@@ -1,12 +1,11 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Button, View, Text } from 'react-native';
 
 import Board from '../components/Board';
 import Legend from '../components/Legend';
 import Scoreboard from '../components/Scoreboard';
-import { GameEventHandler } from '../types/GameEvents';
-import { ScrabbleContext } from '../components/ScrabbleContext';
+import { ScrabbleContext } from '../components/ScrabbleProvider';
 import GameBottomBar from '../components/GameBottomBar';
 import CountdownTimer from '../components/CountdownTimer';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';

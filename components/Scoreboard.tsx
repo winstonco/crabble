@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Entypo } from '@expo/vector-icons';
 import { GameEventHandler } from '../types/GameEvents';
-import { ScrabbleContext } from './ScrabbleContext';
+import { ScrabbleContext } from './ScrabbleProvider';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 
 type PlayerScores = {

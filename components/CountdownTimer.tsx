@@ -3,7 +3,7 @@ import { StyleSheet, View, Text } from 'react-native';
 import { CountdownCircleTimer } from 'react-native-countdown-circle-timer';
 
 import { GameEventHandler } from '../types/GameEvents';
-import { ScrabbleContext } from './ScrabbleContext';
+import { ScrabbleContext } from './ScrabbleProvider';
 
 const CountdownTimer: React.FC<{}> = () => {
   const scrabbleGame = useContext(ScrabbleContext);
@@ -37,20 +37,6 @@ const CountdownTimer: React.FC<{}> = () => {
       endTurnSub.remove();
     };
   }, []);
-
-  // useEffect(() => {
-  //   const tickDown = () => {
-  //     console.log(targetDate - Date.now());
-  //     if (targetTime > Date.now()) {
-  //       setTimeRemaining(() => Math.floor((targetTime - Date.now()) / 1000));
-  //     }
-  //   };
-  //   const timer = setInterval(tickDown, 1000);
-
-  //   return () => {
-  //     clearInterval(timer);
-  //   };
-  // }, []);
 
   return (
     <CountdownCircleTimer

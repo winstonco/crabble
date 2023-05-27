@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { ScrabbleContext } from '../components/ScrabbleContext';
+import { ScrabbleContext } from '../components/ScrabbleProvider';
 
 const useCurrentPlayer = () => {
   const scrabbleGame = useContext(ScrabbleContext);

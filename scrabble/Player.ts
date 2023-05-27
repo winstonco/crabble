@@ -67,6 +67,7 @@ class Player {
     if (placementSuccessful) {
       this.endTurn();
       this.score += score;
+      this.placedTiles = [];
       return true;
     }
     this.revertPlacedTiles();
@@ -74,7 +75,6 @@ class Player {
   };
 
   private revertPlacedTiles = (): void => {
-    console.log(this.placedTiles);
     while (this.placedTiles.length > 0) {
       const placedTileToRevert = this.placedTiles.shift();
       const revertedTile = this.scrabbleGame.removeTile(placedTileToRevert);
@@ -82,6 +82,7 @@ class Player {
         this.hand.push(revertedTile);
       }
     }
+    this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
   };
 
   /**
