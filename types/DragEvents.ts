@@ -30,7 +30,7 @@ export const DragEventId = (value: any): DragEventsIdInstance => {
 };
 
 type DragEvents = {
-  position: [
+  release: [
     {
       id: DragEventsIdInstance;
       screenX: number;

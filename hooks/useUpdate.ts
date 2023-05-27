@@ -19,7 +19,6 @@ const useUpdate = (id?: string) => {
     );
     const removeTileSub = scrabbleGame.emitter.addListener('removeTile', () => {
       handleUpdate();
-      console.log('removed tile');
     });
 
     const startTurnSub = scrabbleGame.emitter.addListener(

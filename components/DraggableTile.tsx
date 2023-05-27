@@ -1,41 +1,55 @@
 import React, { useRef } from 'react';
-import { StyleSheet, Text, View, Animated } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Animated,
+  NativeSyntheticEvent,
+} from 'react-native';
 import TileType from '../types/TileType';
 import useDraggable from '../hooks/useDraggable';
 import useReceivable from '../hooks/useReceivable';
+import useCurrentPlayer from '../hooks/useCurrentPlayer';
 
-const DraggableTile: React.FC<{
+type DraggableTileProps = {
   tile: TileType;
-  indexInHand: number;
-}> = ({ tile, indexInHand }) => {
+  payload: any;
+  onMove?: (ev: NativeSyntheticEvent<unknown>) => void;
+  onRelease?: (payload: any) => void;
+  draggable?: boolean;
+};
+
+const DraggableTile: React.FC<DraggableTileProps> = ({
+  draggable = true,
+  ...props
+}) => {
   const viewRef = useRef<View>(null);
+  const currentPlayer = useCurrentPlayer();
 
   const { panResponder, conditionalStyles } = useDraggable(
     viewRef,
     {
-      // onMove: (ev) => console.log(ev),
+      onMove: props.onMove,
     },
-    tile
+    props.payload
   );
 
   useReceivable(
     viewRef,
     {
-      onRelease: (payload) => {
-        console.log(payload);
-        console.log(tile);
-      },
+      onRelease: props.onRelease,
+      exclude: [viewRef],
     },
-    [viewRef]
+    [currentPlayer]
   );
 
   return (
     <Animated.View
       ref={viewRef}
-      style={[...conditionalStyles, styles.cell]}
-      {...panResponder.panHandlers}
+      style={[...(draggable ? conditionalStyles : []), styles.cell]}
+      {...(draggable ? panResponder.panHandlers : [])}
     >
-      <Text style={styles.text}>{tile?.toUpperCase()}</Text>
+      <Text style={styles.text}>{props.tile?.toUpperCase()}</Text>
     </Animated.View>
   );
 };

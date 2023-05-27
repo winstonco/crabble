@@ -1,11 +1,11 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef, useContext, useMemo } from 'react';
 import {
   PanResponder,
   Animated,
   NativeSyntheticEvent,
   PanResponderInstance,
 } from 'react-native';
-import { DragEventsContext } from '../components/DragEventsProvider';
+import { DragEventsContext } from '../components/DragProvider';
 import { DragEventId } from '../types/DragEvents';
 import Measurable from '../types/Measurable';
 
@@ -22,7 +22,8 @@ type UseDraggableConfigs = {
 const useDraggable = (
   ref: React.MutableRefObject<Measurable>,
   configs?: UseDraggableConfigs,
-  payload?: any
+  payload?: any,
+  deps?: React.DependencyList
 ): {
   panResponder: PanResponderInstance;
   conditionalStyles: Styles[] | undefined;
@@ -33,41 +34,50 @@ const useDraggable = (
   const pan = useRef(new Animated.ValueXY()).current;
   const dragEventsEmitter = useContext(DragEventsContext);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => draggable,
-      onPanResponderGrant: () => {
-        configs?.onStart?.();
-        setIsDragging(true);
-      },
-      onPanResponderMove: (e, gestureState) => {
-        Animated.event([null, { dx: pan.x, dy: pan.y }], {
-          listener: (...args) => {
-            configs?.onMove?.(...args);
-          },
-          useNativeDriver: false,
-        })(e, gestureState);
-      },
-      onPanResponderRelease: (e, gestureState) => {
-        const { moveX, moveY } = gestureState;
-        dragEventsEmitter.emit('position', {
-          id: DragEventId(ref),
-          screenX: moveX,
-          screenY: moveY,
-          payload: payload,
-        });
-        configs?.onRelease?.();
-        setIsDragging(false);
-        Animated.spring(pan, {
-          toValue: { x: 0, y: 0 },
-          overshootClamping: true,
-          useNativeDriver: false,
-        }).start(({ finished }) => {
-          configs?.onReturnOrigin?.();
-        });
-      },
-    })
-  ).current;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => draggable,
+        onPanResponderGrant: () => {
+          configs?.onStart?.();
+          setIsDragging(true);
+        },
+        onPanResponderMove: (e, gestureState) => {
+          Animated.event([null, { dx: pan.x, dy: pan.y }], {
+            listener: (...args) => {
+              configs?.onMove?.(...args);
+            },
+            useNativeDriver: false,
+          })(e, gestureState);
+        },
+        onPanResponderRelease: (e, gestureState) => {
+          const { moveX, moveY } = gestureState;
+          dragEventsEmitter.emit('release', {
+            id: DragEventId(ref),
+            screenX: moveX,
+            screenY: moveY,
+            payload: payload,
+          });
+          configs?.onRelease?.();
+          setIsDragging(false);
+          Animated.spring(pan, {
+            toValue: { x: 0, y: 0 },
+            overshootClamping: true,
+            useNativeDriver: false,
+          }).start(({ finished }) => {
+            configs?.onReturnOrigin?.();
+          });
+        },
+      }),
+    [
+      ...(deps ?? []),
+      configs?.onStart,
+      configs?.onMove,
+      configs?.onRelease,
+      configs?.onReturnOrigin,
+      configs?.whileDraggingStyles,
+    ]
+  );
 
   const styles: Styles[] = [
     pan.getLayout(),
@@ -77,7 +87,7 @@ const useDraggable = (
     isDragging
       ? {
           cursor: 'grabbing',
-          zIndex: 1,
+          zIndex: 100,
           ...configs?.whileDraggingStyles,
         }
       : undefined,

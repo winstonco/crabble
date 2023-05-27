@@ -8,7 +8,7 @@ import TileType from '../types/TileType';
 import DraggableTile from './DraggableTile';
 import useUpdate from '../hooks/useUpdate';
 
-const Cell: React.FC<{
+const CellOverlay: React.FC<{
   cell: ScrabbleCell;
   coords: [number, number];
 }> = ({ cell, coords }) => {
@@ -34,29 +34,33 @@ const Cell: React.FC<{
     [currentPlayer]
   );
 
-  return <View ref={ref} style={[styles.cell, styles[cell.type]]}></View>;
+  return (
+    <View ref={ref} style={[styles.cell]}>
+      {cell.tile && (
+        <DraggableTile
+          tile={cell.tile}
+          payload={{
+            placedTile: {
+              tile: cell.tile,
+              x: coords[0],
+              y: coords[1],
+            },
+          }}
+          draggable={turnPlaced === scrabbleGame.turnNumber}
+        />
+      )}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   cell: {
     flex: 1,
     aspectRatio: '1 / 1',
-    backgroundColor: 'white',
-    borderWidth: 1,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  'triple-word': {
-    backgroundColor: 'red',
-  },
-  'double-word': {
-    backgroundColor: 'pink',
-  },
-  'triple-letter': {
-    backgroundColor: 'blue',
-  },
-  'double-letter': {
-    backgroundColor: 'lightblue',
   },
   text: {
     lineHeight: 0,
@@ -64,4 +68,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Cell;
+export default CellOverlay;

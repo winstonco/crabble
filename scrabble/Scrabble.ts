@@ -299,6 +299,12 @@ class Scrabble {
     this.board[y][x].tile = tile;
   };
 
+  /**
+   * Removes a tile from the board, if possible.
+   *
+   * @param placedTile The tile type and location of the placed tile.
+   * @returns The tile removed or false otherwise.
+   */
   removeTile: sfns.RemoveTileFn = ({ tile, x, y }) => {
     const xyRegex = /^[0-9]{1,2}$/;
     const xIsValid = x >= 0 && x <= this.board[0].length;
@@ -535,10 +541,12 @@ class Scrabble {
     return WORD_LIST.trim().split('\n');
   };
 
+  /** Starts at 1. Increments after every player takes a turn. */
   get roundNumber() {
     return this._roundNumber;
   }
 
+  /** Starts at 1. Increments after each player takes a turn. */
   get turnNumber() {
     return this._turnNumber;
   }

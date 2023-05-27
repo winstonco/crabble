@@ -63,7 +63,6 @@ class Player {
     const [placementSuccessful, score] = this.scrabbleGame.checkTilePlacement(
       this.placedTiles
     );
-    console.log(placementSuccessful);
     if (placementSuccessful) {
       this.endTurn();
       this.score += score;
@@ -99,6 +98,15 @@ class Player {
     this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
     this.placedTiles.push(placedTile);
     this.scrabbleGame.placeTile(placedTile);
+  };
+
+  pickUpTile = (placedTile: sfns.PlacedTile) => {
+    const tile = this.scrabbleGame.removeTile(placedTile);
+    if (tile) {
+      this.placedTiles.splice(this.placedTiles.indexOf(placedTile), 1);
+      this.hand.push(tile);
+      this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
+    }
   };
 
   /**
@@ -181,6 +189,13 @@ class Player {
     this.endTurn();
     console.log(`${this.name} passed their turn`);
     return true;
+  };
+
+  swapTwo = (index1: number, index2: number) => {
+    const temp = this.hand[index1];
+    this.hand[index1] = this.hand[index2];
+    this.hand[index2] = temp;
+    this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
   };
 
   private drawToFull = () => {
