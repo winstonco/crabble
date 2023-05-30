@@ -12,18 +12,9 @@ type GameEvents = {
   ];
   placeTile: [];
   removeTile: [];
-  playWord: [
-    {
-      id: string;
-      word: string;
-      coords: [number, number];
-      direction: WordDirection;
-    }
-  ];
   redraw: [
     {
       id: string;
-      pieces: TileType[];
     }
   ];
   pass: [

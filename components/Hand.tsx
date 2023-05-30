@@ -23,7 +23,11 @@ const Hand: React.FC<{
 
   useReceivable(ref, {
     onRelease: (payload) => {
-      if (payload.indexInHand) {
+      if (payload.indexInHand !== undefined) {
+        return;
+      }
+      if (payload.from === 'redraw') {
+        player.unsetRedraw(payload.tile, payload.indexInRedrawing);
         return;
       }
       player.pickUpTile(payload.placedTile);
@@ -41,7 +45,8 @@ const Hand: React.FC<{
             indexInHand: idx,
           }}
           onRelease={(payload) => {
-            if (payload.indexInHand) {
+            if (payload.indexInHand !== undefined) {
+              console.log(payload.indexInHand, idx);
               player.swapTwo(payload.indexInHand, idx);
             }
           }}

@@ -12,6 +12,7 @@ class Player {
   name: string;
   score: number;
   hand: TileType[];
+  redrawing: TileType[];
   placedTiles: sfns.PlacedTile[];
   isTakingTurn: boolean;
   turnEndCallback: TurnEndCallback;
@@ -26,6 +27,7 @@ class Player {
     for (let _ of Array(7)) {
       this.hand.push(this.scrabbleGame.drawPiece());
     }
+    this.redrawing = [];
     this.placedTiles = [];
     this.isTakingTurn = false;
     this.initEventListeners();
@@ -88,16 +90,18 @@ class Player {
    * Adds a tile to the tiles placed list.
    *
    * @param placedTile The tile type and location of the tile placed.
+   * @param indexInHand The index of the tile in the hand.
    */
-  placeTile = (placedTile: sfns.PlacedTile) => {
-    const idx = this.hand.indexOf(placedTile.tile);
-    if (idx === -1) {
+  placeTile = (placedTile: sfns.PlacedTile, indexInHand: number) => {
+    if (indexInHand < 0 || indexInHand >= this.hand.length) {
       return;
     }
-    this.hand.splice(idx, 1);
-    this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
-    this.placedTiles.push(placedTile);
-    this.scrabbleGame.placeTile(placedTile);
+    if (this.scrabbleGame.placeTile(placedTile)) {
+      this.hand.splice(indexInHand, 1);
+      console.log(this.hand);
+      this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
+      this.placedTiles.push(placedTile);
+    }
   };
 
   pickUpTile = (placedTile: sfns.PlacedTile) => {
@@ -109,48 +113,50 @@ class Player {
     }
   };
 
-  /**
-   * Take the turn to play a word.
-   *
-   * @param word The word to play.
-   * @param coords The location in [x, y] where [0, 0] is the top-left of the board.
-   * @param direction TOP_TO_BOTTOM | LEFT_TO_RIGHT
-   * @returns True if it was successful, false if not.
-   */
-  playWord: sfns.AddWordHandler = (word, ...args): boolean => {
-    if (!this.isTakingTurn) {
-      return false;
-    }
-    const foundLetters: { [c in TileType]?: number } = {};
-    for (let letter of word) {
-      if (!isTile(letter)) {
-        return false;
-      }
-      const idx = this.hand.indexOf(letter, foundLetters[letter] + 1 ?? 0);
-      if (idx === -1) {
-        return false;
-      }
-      foundLetters[letter] = idx;
-    }
-    const wordScore = this.scrabbleGame.addWord(word, ...args);
-    if (wordScore === sfns.ReturnTypes.INVALID_WORD) {
-      return false;
-    }
-    this.score += wordScore;
-    this.redraw(word.split('') as TileType[]);
-    this.endTurn();
-    console.log(`${this.name} played a word`);
-    return true;
-  };
+  // /**
+  //  * Take the turn to play a word.
+  //  *
+  //  * @deprecated
+  //  * @param word The word to play.
+  //  * @param coords The location in [x, y] where [0, 0] is the top-left of the board.
+  //  * @param direction TOP_TO_BOTTOM | LEFT_TO_RIGHT
+  //  * @returns True if it was successful, false if not.
+  //  */
+  // playWord: sfns.AddWordHandler = (word, ...args): boolean => {
+  //   if (!this.isTakingTurn) {
+  //     return false;
+  //   }
+  //   const foundLetters: { [c in TileType]?: number } = {};
+  //   for (let letter of word) {
+  //     if (!isTile(letter)) {
+  //       return false;
+  //     }
+  //     const idx = this.hand.indexOf(letter, foundLetters[letter] + 1 ?? 0);
+  //     if (idx === -1) {
+  //       return false;
+  //     }
+  //     foundLetters[letter] = idx;
+  //   }
+  //   const wordScore = this.scrabbleGame.addWord(word, ...args);
+  //   if (wordScore === sfns.ReturnTypes.INVALID_WORD) {
+  //     return false;
+  //   }
+  //   this.score += wordScore;
+  //   for (let _ of word) {
+  //     this.hand.push(this.scrabbleGame.drawPiece());
+  //   }
+  //   this.endTurn();
+  //   console.log(`${this.name} played a word`);
+  //   return true;
+  // };
 
   /**
    * Take the turn to redraw pieces.
    *
-   * @param pieces The array of pieces to redraw. They must be in the hand.
    * @returns True if it was successful, false if not.
    */
-  redraw = (pieces: TileType[]): boolean => {
-    if (!this.isTakingTurn) {
+  redraw = (): boolean => {
+    if (!this.isTakingTurn || this.redrawing.length === 0) {
       return false;
     }
     const removedTiles: TileType[] = [];
@@ -158,7 +164,7 @@ class Player {
       removedTiles.forEach((tile) => this.hand.push(tile));
       return false;
     };
-    pieces.forEach((tile) => {
+    this.redrawing.forEach((tile) => {
       const handIdx = this.hand.indexOf(tile);
       if (handIdx === -1) {
         rollbackRemove();
@@ -173,6 +179,46 @@ class Player {
     });
     this.endTurn();
     console.log(`${this.name} redrew pieces`);
+    return true;
+  };
+
+  /**
+   * Take a piece out of the player's hand and put in "redrawing group" before confirming redraw.
+   *
+   * @param piece The piece being selected to redraw.
+   * @param indexInHand The index of the piece in `this.hand`.
+   * @returns True if it was successful, false if not.
+   */
+  setRedraw = (piece: TileType, indexInHand: number): boolean => {
+    if (indexInHand < 0 || indexInHand >= this.hand.length) {
+      return false;
+    }
+    if (this.hand[indexInHand] !== piece) {
+      return false;
+    }
+    this.hand.splice(indexInHand, 1);
+    this.redrawing.push(piece);
+    this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
+    return true;
+  };
+
+  /**
+   * Take a piece out of the player's "redrawing group" and put in their hand.
+   *
+   * @param piece The piece being selected to redraw.
+   * @param indexInRedrawing The index of the piece in `this.redrawing`.
+   * @returns True if it was successful, false if not.
+   */
+  unsetRedraw = (piece: TileType, indexInRedrawing: number) => {
+    if (indexInRedrawing < 0 || indexInRedrawing >= this.redrawing.length) {
+      return false;
+    }
+    if (this.redrawing[indexInRedrawing] !== piece) {
+      return false;
+    }
+    this.hand.push(piece);
+    this.redrawing.splice(indexInRedrawing, 1);
+    this.scrabbleGame.emitter.emit('updateHand', { id: this.id });
     return true;
   };
 
@@ -220,21 +266,11 @@ class Player {
   };
 
   private initEventListeners = () => {
-    this.scrabbleGame.emitter.addListener(
-      'playWord',
-      ({ id, word, coords, direction }) => {
-        if (id !== this.id) {
-          return;
-        }
-        this.playWord(word, coords, direction);
-      }
-    );
-
-    this.scrabbleGame.emitter.addListener('redraw', ({ id, pieces }) => {
+    this.scrabbleGame.emitter.addListener('redraw', ({ id }) => {
       if (id !== this.id) {
         return;
       }
-      this.redraw(pieces);
+      this.redraw();
     });
 
     this.scrabbleGame.emitter.addListener('pass', ({ id }) => {

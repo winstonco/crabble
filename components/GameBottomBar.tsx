@@ -40,12 +40,19 @@ const GameBottomBar = () => {
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
-      </View>
-      <View style={styles.row}>
         <Redraw />
-        <Button onPress={handleConfirmPlacement} title="Confirm Placement" />
-        <Button onPress={handlePass} title="Pass" />
+        <View>
+          <View style={styles.row}>
+            <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
+          </View>
+          <View style={styles.row}>
+            <Button
+              onPress={handleConfirmPlacement}
+              title="Confirm Placement"
+            />
+            <Button onPress={handlePass} title="Pass" />
+          </View>
+        </View>
       </View>
     </View>
   );

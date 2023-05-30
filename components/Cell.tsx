@@ -22,13 +22,21 @@ const Cell: React.FC<{
     ref,
     {
       onRelease: (payload) => {
-        currentPlayer.placeTile({
-          tile: payload.tile as TileType,
-          x: coords[0],
-          y: coords[1],
-        });
+        if (
+          payload.indexInHand === undefined ||
+          typeof payload.indexInHand !== 'number'
+        ) {
+          return;
+        }
+        currentPlayer.placeTile(
+          {
+            tile: payload.tile as TileType,
+            x: coords[0],
+            y: coords[1],
+          },
+          payload.indexInHand
+        );
         setTurnPlaced(scrabbleGame.turnNumber);
-        console.log(coords);
       },
     },
     [currentPlayer]

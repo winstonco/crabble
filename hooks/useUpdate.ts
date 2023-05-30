@@ -17,9 +17,10 @@ const useUpdate = (id?: string) => {
       'placeTile',
       handleUpdate
     );
-    const removeTileSub = scrabbleGame.emitter.addListener('removeTile', () => {
-      handleUpdate();
-    });
+    const removeTileSub = scrabbleGame.emitter.addListener(
+      'removeTile',
+      handleUpdate
+    );
 
     const startTurnSub = scrabbleGame.emitter.addListener(
       'startTurn',

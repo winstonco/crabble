@@ -297,6 +297,7 @@ class Scrabble {
     }
     this.emitter.emit('placeTile');
     this.board[y][x].tile = tile;
+    return true;
   };
 
   /**

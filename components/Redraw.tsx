@@ -1,114 +1,76 @@
-import React, { useState, useContext } from 'react';
-import { StyleSheet, Button, Modal, View, Text, Pressable } from 'react-native';
-import { ScrabbleContext } from './ScrabbleProvider';
-import TileType from '../types/TileType';
-import Hand, { ClickTileHandler } from './Hand';
+import React, { useRef } from 'react';
+import { StyleSheet, Button, View, Text } from 'react-native';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
+import useReceivable from '../hooks/useReceivable';
+import DraggableTile from './DraggableTile';
+import useUpdate from '../hooks/useUpdate';
 
 const Redraw: React.FC<{}> = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTiles, setSelectedTiles] = useState<TileType[]>([]);
-  const scrabbleGame = useContext(ScrabbleContext);
   const currentPlayer = useCurrentPlayer();
+  const ref = useRef(null);
+  useUpdate(currentPlayer.id);
 
-  const redraw = (pieces: TileType[]) => {
-    // scrabbleGame.emitter.emit('redraw', {
-    //   id: currentPlayer.id,
-    //   pieces: pieces,
-    // });
-    currentPlayer.redraw(pieces);
-  };
-
-  const handlePress = () => {
-    setModalVisible(true);
-  };
+  useReceivable(ref, {
+    onRelease: (payload) => {
+      if (
+        payload.tile === undefined ||
+        typeof payload.tile !== 'string' ||
+        payload.from === 'redraw' ||
+        payload.indexInHand === undefined ||
+        typeof payload.indexInHand !== 'number'
+      ) {
+        return;
+      }
+      currentPlayer.setRedraw(payload.tile, payload.indexInHand);
+    },
+  });
 
   const handleRedraw = () => {
-    redraw(selectedTiles);
-    handleClose();
-  };
-
-  const handleClose = () => {
-    setModalVisible(false);
-  };
-
-  const handleClickTile: ClickTileHandler = (tile, index, selected) => {
-    setSelectedTiles((prev) => {
-      if (selected) {
-        return [...prev, tile];
-      } else {
-        const indexOfTile = prev.indexOf(tile);
-        if (indexOfTile !== -1) {
-          return [
-            ...prev.slice(0, indexOfTile),
-            ...prev.slice(indexOfTile + 1, prev.length),
-          ];
-        }
-      }
-    });
+    currentPlayer.redraw();
   };
 
   return (
-    <>
-      <Button onPress={handlePress} title="Redraw" />
-      <Modal
-        animationType="slide"
-        visible={modalVisible}
-        onRequestClose={handleClose}
-        transparent={true}
-      >
-        <View style={modalStyles.centeredView}>
-          <View style={modalStyles.container}>
-            <Text style={{ fontSize: 16 }}>
-              Select tiles below and press Redraw.
-            </Text>
-            <Hand
-              player={scrabbleGame.currentPlayer}
-              onClickTile={handleClickTile}
+    <View style={styles.container} ref={ref}>
+      <Text>Drag tiles here to redraw them. This takes your turn</Text>
+      <View style={styles.tiles}>
+        {currentPlayer.redrawing.map((tile, index) => {
+          return (
+            <DraggableTile
+              key={`redraw-${tile}-${index}`}
+              tile={tile}
+              payload={{
+                tile,
+                indexInRedrawing: index,
+                from: 'redraw',
+              }}
             />
-            <View style={modalStyles.row}>
-              <Pressable onPress={handleRedraw} style={modalStyles.close}>
-                <Text style={{ fontSize: 16, color: 'white' }}>Redraw</Text>
-              </Pressable>
-              <Pressable onPress={handleClose} style={modalStyles.close}>
-                <Text style={{ fontSize: 16, color: 'white' }}>Nevermind</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </>
+          );
+        })}
+      </View>
+      <View style={styles.confirm}>
+        <Button onPress={handleRedraw} title="Confirm Redraw" />
+      </View>
+    </View>
   );
 };
 
 export default Redraw;
 
-const modalStyles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderWidth: 2,
-    borderStyle: 'solid',
+    width: 200,
+    borderWidth: 1,
     borderColor: 'black',
-    gap: 12,
+    padding: 10,
   },
-  row: {
+  tiles: {
+    marginTop: 10,
+    marginBottom: 10,
     flexDirection: 'row',
     gap: 10,
+    flexWrap: 'wrap',
   },
-  close: {
-    flex: 1,
+  confirm: {
     marginTop: 'auto',
-    textAlign: 'center',
-    borderColor: 'black',
-    borderWidth: 2,
-    borderRadius: 8,
-    padding: 4,
-    backgroundColor: 'rgb(39, 82, 255)',
   },
 });
