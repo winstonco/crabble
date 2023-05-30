@@ -42,7 +42,7 @@ const useUpdate = (id?: string) => {
       removeTileSub.remove();
       updateHandSub.remove();
     };
-  }, [scrabbleGame]);
+  }, [scrabbleGame, id]);
 };
 
 export default useUpdate;

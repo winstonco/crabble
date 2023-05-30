@@ -21,6 +21,8 @@ const Redraw: React.FC<{}> = () => {
       ) {
         return;
       }
+      console.log(payload);
+      console.log(currentPlayer);
       currentPlayer.setRedraw(payload.tile, payload.indexInHand);
     },
   });

@@ -160,18 +160,10 @@ class Player {
       return false;
     }
     const removedTiles: TileType[] = [];
-    const rollbackRemove = () => {
-      removedTiles.forEach((tile) => this.hand.push(tile));
-      return false;
-    };
-    this.redrawing.forEach((tile) => {
-      const handIdx = this.hand.indexOf(tile);
-      if (handIdx === -1) {
-        rollbackRemove();
-      }
+    for (let i = 0; i < this.redrawing.length; i++) {
+      const tile = this.redrawing.pop();
       removedTiles.push(tile);
-      this.hand.splice(handIdx, 1);
-    });
+    }
     this.scrabbleGame.shufflePieces();
     removedTiles.forEach(() => {
       const draw = this.scrabbleGame.drawPiece();
@@ -228,7 +220,6 @@ class Player {
    * @returns True
    */
   passTurn = (): boolean => {
-    console.log(this.id);
     if (!this.isTakingTurn) {
       return false;
     }
@@ -260,6 +251,9 @@ class Player {
     }
     this.turnTimeoutId = null;
     this.isTakingTurn = false;
+    for (let i = 0; i < this.redrawing.length; i++) {
+      this.hand.push(this.redrawing.pop());
+    }
     this.drawToFull();
     this.turnEndCallback?.();
     console.log(`${this.name}'s Turn Ended`);

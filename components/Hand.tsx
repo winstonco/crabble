@@ -46,7 +46,6 @@ const Hand: React.FC<{
           }}
           onRelease={(payload) => {
             if (payload.indexInHand !== undefined) {
-              console.log(payload.indexInHand, idx);
               player.swapTwo(payload.indexInHand, idx);
             }
           }}
