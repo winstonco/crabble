@@ -1,7 +1,7 @@
 import ScrabbleBoard from '../types/ScrabbleBoard';
 import TileType, { Char, isChar, isChars } from '../types/TileType';
-import WORD_LIST from './scrabble-word-list';
-import LETTER_VALUES from './letter-values.json';
+import WORD_LIST from './data/scrabble-word-list';
+import LETTER_VALUES from './data/letter-values.json';
 import sfns from '../types/ScrabbleFns';
 import ScrabbleCell from '../types/ScrabbleCell';
 import {
@@ -10,7 +10,7 @@ import {
   DEFAULT_TURN_LENGTH,
   SpecialTilesList,
   TileDistribution,
-} from './defaults';
+} from './data/defaults';
 import Player from './Player';
 import Bot from './Bot';
 import shuffleArray from '../helpers/shuffleArray';

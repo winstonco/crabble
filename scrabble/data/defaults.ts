@@ -1,5 +1,5 @@
-import { CellType } from '../types/ScrabbleCell';
-import TileType from '../types/TileType';
+import { CellType } from '../../types/ScrabbleCell';
+import TileType from '../../types/TileType';
 
 export type SpecialTilesList = [[number, number], CellType][];
 

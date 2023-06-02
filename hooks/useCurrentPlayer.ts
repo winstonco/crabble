@@ -1,19 +1,22 @@
-import { useState, useEffect, useContext } from 'react';
-import { ScrabbleContext } from '../components/ScrabbleProvider';
+import { useState, useEffect } from 'react';
+import { useScrabble } from '../contexts/ScrabbleProvider';
+import { GameEventHandler } from '../types/GameEvents';
 
 const useCurrentPlayer = () => {
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const [currentPlayer, setCurrentPlayer] = useState(
     scrabbleGame.currentPlayer
   );
 
   useEffect(() => {
-    const startTurnSub = scrabbleGame.emitter.addListener('startTurn', () => {
+    const handleStartTurn: GameEventHandler<'startTurn'> = () => {
       setCurrentPlayer(scrabbleGame.currentPlayer);
-    });
+    };
+
+    scrabbleGame.emitter.addListener('startTurn', handleStartTurn);
 
     return () => {
-      startTurnSub.remove();
+      scrabbleGame.emitter.removeListener('startTurn', handleStartTurn);
     };
   }, [scrabbleGame]);
 

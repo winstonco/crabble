@@ -1,4 +1,4 @@
-import { nanoid } from 'nanoid';
+import { randomUUID } from 'expo-crypto';
 
 import sfns from '../types/ScrabbleFns';
 import TileType, { isTile } from '../types/TileType';
@@ -20,7 +20,7 @@ class Player {
 
   constructor(game: Scrabble, name: string) {
     this.scrabbleGame = game;
-    this.id = nanoid();
+    this.id = randomUUID();
     this.name = name;
     this.score = 0;
     this.hand = [];

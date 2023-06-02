@@ -1,6 +1,7 @@
-import React, { useContext, useEffect } from 'react';
-import { DragEventsContext } from '../components/DragEventsProvider';
+import React, { useEffect } from 'react';
+import { useDragEvents } from '../contexts/DragEventsContext';
 import Measurable from '../types/Measurable';
+import { DragEventHandler } from '../types/DragEvents';
 
 type UseReceivableConfigs = {
   onRelease?: (payload: any) => void;
@@ -14,30 +15,34 @@ const useReceivable = (
   configs?: UseReceivableConfigs,
   deps?: React.DependencyList
 ) => {
-  const dragEventsEmitter = useContext(DragEventsContext);
+  const dragEventsEmitter = useDragEvents();
 
   useEffect(() => {
-    const positionSub = dragEventsEmitter.addListener(
-      'release',
-      ({ id, screenX, screenY, payload }) => {
-        if (configs?.exclude?.includes(id.value)) {
-          return;
-        }
-        ref.current.measure((_, __, width, height, pageX, pageY) => {
-          const releasedWithinBounds =
-            screenX >= pageX &&
-            screenX <= pageX + width &&
-            screenY >= pageY &&
-            screenY <= pageY + height;
-          if (releasedWithinBounds) {
-            configs?.onRelease?.(payload);
-          }
-        });
+    const handleRelease: DragEventHandler<'release'> = ({
+      id,
+      screenX,
+      screenY,
+      payload,
+    }) => {
+      if (configs?.exclude?.includes(id.value)) {
+        return;
       }
-    );
+      ref.current.measure((_, __, width, height, pageX, pageY) => {
+        const releasedWithinBounds =
+          screenX >= pageX &&
+          screenX <= pageX + width &&
+          screenY >= pageY &&
+          screenY <= pageY + height;
+        if (releasedWithinBounds) {
+          configs?.onRelease?.(payload);
+        }
+      });
+    };
+
+    dragEventsEmitter.addListener('release', handleRelease);
 
     return () => {
-      positionSub.remove();
+      dragEventsEmitter.removeListener('release', handleRelease);
     };
   }, [...(deps ?? []), dragEventsEmitter]);
 };

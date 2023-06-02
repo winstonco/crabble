@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Entypo } from '@expo/vector-icons';
 import { GameEventHandler } from '../types/GameEvents';
-import { ScrabbleContext } from './ScrabbleProvider';
+import { useScrabble } from '../contexts/ScrabbleProvider';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 
 type PlayerScores = {
@@ -12,34 +12,31 @@ type PlayerScores = {
 }[];
 
 const Scoreboard: React.FC<{}> = () => {
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const currentPlayer = useCurrentPlayer();
 
   const [playerScores, setPlayerScores] = useState<PlayerScores>(
     scrabbleGame.players
   );
 
-  const handleEndTurn: GameEventHandler<'endTurn'> = ({
-    id,
-    score: newScore,
-  }) => {
-    setPlayerScores(
-      playerScores.map((player) =>
-        player.id === id ? { ...player, score: newScore } : player
-      )
-    );
-  };
+  const handleEndTurn: GameEventHandler<'endTurn'> = useCallback(
+    ({ id, score: newScore }) => {
+      setPlayerScores(
+        playerScores.map((player) =>
+          player.id === id ? { ...player, score: newScore } : player
+        )
+      );
+    },
+    [playerScores]
+  );
 
   useEffect(() => {
-    const endTurnSub = scrabbleGame.emitter.addListener(
-      'endTurn',
-      handleEndTurn
-    );
+    scrabbleGame.emitter.addListener('endTurn', handleEndTurn);
 
     return () => {
-      endTurnSub.remove();
+      scrabbleGame.emitter.removeListener('endTurn', handleEndTurn);
     };
-  }, []);
+  }, [handleEndTurn]);
 
   return (
     <View style={styles.container}>

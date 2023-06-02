@@ -2,7 +2,6 @@
   "expo": {
     "name": "crabble",
     "slug": "crabble",
-    "scheme": "myapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,12 +23,7 @@
     },
     "web": {
       "name": "Crabble",
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "favicon": "./assets/favicon.png"
     }
-  },
-  "overrides": {
-    "metro": "0.76.0",
-    "metro-resolver": "0.76.0"
   }
 }

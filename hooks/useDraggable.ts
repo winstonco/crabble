@@ -1,11 +1,11 @@
-import React, { useState, useRef, useContext, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   PanResponder,
   Animated,
   NativeSyntheticEvent,
   PanResponderInstance,
 } from 'react-native';
-import { DragEventsContext } from '../components/DragEventsProvider';
+import { useDragEvents } from '../contexts/DragEventsContext';
 import { DragEventId } from '../types/DragEvents';
 import Measurable from '../types/Measurable';
 
@@ -32,7 +32,7 @@ const useDraggable = (
   const [draggable, setDraggable] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
-  const dragEventsEmitter = useContext(DragEventsContext);
+  const dragEventsEmitter = useDragEvents();
 
   const panResponder = useMemo(
     () =>

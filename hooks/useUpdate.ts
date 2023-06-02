@@ -1,5 +1,6 @@
-import { useState, useEffect, useContext } from 'react';
-import { ScrabbleContext } from '../components/ScrabbleProvider';
+import { useState, useEffect } from 'react';
+import { useScrabble } from '../contexts/ScrabbleProvider';
+import { GameEventHandler } from '../types/GameEvents';
 
 /**
  * A hook to rerender on receiving game events.
@@ -7,40 +8,31 @@ import { ScrabbleContext } from '../components/ScrabbleProvider';
  * @param id (Optional) The id of the player for hand updates.
  */
 const useUpdate = (id?: string) => {
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const [_, setUpdate] = useState(false);
 
   useEffect(() => {
     const handleUpdate = () => setUpdate((update) => !update);
 
-    const placeTileSub = scrabbleGame.emitter.addListener(
-      'placeTile',
-      handleUpdate
-    );
-    const removeTileSub = scrabbleGame.emitter.addListener(
-      'removeTile',
-      handleUpdate
-    );
+    scrabbleGame.emitter.addListener('startTurn', handleUpdate);
+    scrabbleGame.emitter.addListener('placeTile', handleUpdate);
+    scrabbleGame.emitter.addListener('removeTile', handleUpdate);
 
-    const startTurnSub = scrabbleGame.emitter.addListener(
-      'startTurn',
-      handleUpdate
-    );
-
-    const updateHandSub = scrabbleGame.emitter.addListener(
-      'updateHand',
-      ({ id: toCheck }) => {
-        if (id && id === toCheck) {
-          handleUpdate();
-        }
+    const handleUpdateHand: GameEventHandler<'updateHand'> = ({
+      id: toCheck,
+    }) => {
+      if (id && id === toCheck) {
+        handleUpdate();
       }
-    );
+    };
+
+    scrabbleGame.emitter.addListener('updateHand', handleUpdateHand);
 
     return () => {
-      startTurnSub.remove();
-      placeTileSub.remove();
-      removeTileSub.remove();
-      updateHandSub.remove();
+      scrabbleGame.emitter.removeListener('startTurn', handleUpdate);
+      scrabbleGame.emitter.removeListener('placeTile', handleUpdate);
+      scrabbleGame.emitter.removeListener('removeTile', handleUpdate);
+      scrabbleGame.emitter.removeListener('updateHand', handleUpdateHand);
     };
   }, [scrabbleGame, id]);
 };

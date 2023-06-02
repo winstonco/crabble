@@ -1,7 +1,7 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import ScrabbleCell from '../types/ScrabbleCell';
-import { ScrabbleContext } from './ScrabbleProvider';
+import { useScrabble } from '../contexts/ScrabbleProvider';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 import useReceivable from '../hooks/useReceivable';
 import TileType from '../types/TileType';
@@ -12,7 +12,7 @@ const Cell: React.FC<{
   cell: ScrabbleCell;
   coords: [number, number];
 }> = ({ cell, coords }) => {
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const ref = useRef<View>(null);
   useUpdate();
   const currentPlayer = useCurrentPlayer();
@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
     aspectRatio: '1 / 1',
     backgroundColor: 'white',
     borderWidth: 1,
+    borderColor: '#777',
     justifyContent: 'center',
     alignItems: 'center',
   },

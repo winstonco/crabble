@@ -1,15 +1,15 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Button } from 'react-native';
-import Hand from './Hand';
-import { ScrabbleContext } from './ScrabbleProvider';
-import Redraw from './Redraw';
-import useCurrentPlayer from '../hooks/useCurrentPlayer';
-import TileType from '../types/TileType';
-import useUpdate from '../hooks/useUpdate';
+import Hand from '../Hand';
+import { useScrabble } from '../../contexts/ScrabbleProvider';
+import Redraw from '../Redraw';
+import useCurrentPlayer from '../../hooks/useCurrentPlayer';
+import TileType from '../../types/TileType';
+import useUpdate from '../../hooks/useUpdate';
 
 const GameBottomBar = () => {
   const [idxTileSelected, setIdxTileSelected] = useState(-1);
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const currentPlayer = useCurrentPlayer();
   useUpdate();
 
@@ -39,19 +39,12 @@ const GameBottomBar = () => {
 
   return (
     <View style={styles.container}>
+      <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
       <View style={styles.row}>
         <Redraw />
         <View>
-          <View style={styles.row}>
-            <Hand player={currentPlayer} onClickTile={handleSwitchTile} />
-          </View>
-          <View style={styles.row}>
-            <Button
-              onPress={handleConfirmPlacement}
-              title="Confirm Placement"
-            />
-            <Button onPress={handlePass} title="Pass" />
-          </View>
+          <Button onPress={handleConfirmPlacement} title="Confirm Placement" />
+          <Button onPress={handlePass} title="Pass" />
         </View>
       </View>
     </View>

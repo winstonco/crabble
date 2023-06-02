@@ -1,13 +1,13 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import Cell from './Cell';
-import { ScrabbleContext } from './ScrabbleProvider';
+import { useScrabble } from '../contexts/ScrabbleProvider';
 import useUpdate from '../hooks/useUpdate';
 import CellOverlay from './CellOverlay';
 
 const Board: React.FC<{}> = () => {
   useUpdate();
-  const { board } = useContext(ScrabbleContext);
+  const { board } = useScrabble();
 
   return (
     <View style={styles.container}>
@@ -50,10 +50,9 @@ const Board: React.FC<{}> = () => {
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    minWidth: 600,
     maxWidth: 800,
     aspectRatio: '1 / 1',
-    width: '80%',
+    width: '100%',
   },
   board: {
     width: '100%',

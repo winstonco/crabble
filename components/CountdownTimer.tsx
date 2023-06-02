@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { CountdownCircleTimer } from 'react-native-countdown-circle-timer';
 
 import { GameEventHandler } from '../types/GameEvents';
-import { ScrabbleContext } from './ScrabbleProvider';
+import { useScrabble } from '../contexts/ScrabbleProvider';
 
 const CountdownTimer: React.FC<{}> = () => {
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const [running, setRunning] = useState(false);
   const [duration, setDuration] = useState(0);
   const [key, setKey] = useState(0);
@@ -22,19 +22,13 @@ const CountdownTimer: React.FC<{}> = () => {
       setRunning(false);
     };
 
-    const startTurnSub = scrabbleGame.emitter.addListener(
-      'startTurn',
-      handleStartTurn
-    );
+    scrabbleGame.emitter.addListener('startTurn', handleStartTurn);
 
-    const endTurnSub = scrabbleGame.emitter.addListener(
-      'endTurn',
-      handleEndTurn
-    );
+    scrabbleGame.emitter.addListener('endTurn', handleEndTurn);
 
     return () => {
-      startTurnSub.remove();
-      endTurnSub.remove();
+      scrabbleGame.emitter.removeListener('startTurn', handleStartTurn);
+      scrabbleGame.emitter.removeListener('endTurn', handleEndTurn);
     };
   }, []);
 

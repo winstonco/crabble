@@ -1,16 +1,21 @@
-import { NativeEventEmitter, EmitterSubscription } from 'react-native';
+import EventEmitter from 'events';
 
 /**
  * @author Wade Baglin
  * @see {@link https://blog.makerx.com.au/a-type-safe-event-emitter-in-node-js/}
  */
 class TypedNativeEventEmitter<TEvents extends Record<string, any>> {
-  private emitter = new NativeEventEmitter();
+  private emitter: EventEmitter;
+
+  constructor() {
+    this.emitter = new EventEmitter();
+  }
 
   addListener<TEventName extends keyof TEvents & string>(
     eventName: TEventName,
     handler: (...eventArg: TEvents[TEventName]) => void
-  ): EmitterSubscription {
+  ) {
+    this.emitter.setMaxListeners(this.emitter.listenerCount(eventName) + 1);
     return this.emitter.addListener(eventName, handler as any);
   }
 
@@ -33,8 +38,11 @@ class TypedNativeEventEmitter<TEvents extends Record<string, any>> {
     this.emitter.removeAllListeners(eventName);
   }
 
-  removeSubscription(subscription: EmitterSubscription) {
-    this.emitter.removeSubscription(subscription);
+  removeListener<TEventName extends keyof TEvents & string>(
+    eventName: TEventName,
+    handler: (...eventArg: TEvents[TEventName]) => void
+  ) {
+    this.emitter.removeListener(eventName, handler);
   }
 }
 

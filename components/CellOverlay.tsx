@@ -1,7 +1,7 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import ScrabbleCell from '../types/ScrabbleCell';
-import { ScrabbleContext } from './ScrabbleProvider';
+import { useScrabble } from '../contexts/ScrabbleProvider';
 import useCurrentPlayer from '../hooks/useCurrentPlayer';
 import useReceivable from '../hooks/useReceivable';
 import TileType from '../types/TileType';
@@ -12,9 +12,9 @@ const CellOverlay: React.FC<{
   cell: ScrabbleCell;
   coords: [number, number];
 }> = ({ cell, coords }) => {
-  const scrabbleGame = useContext(ScrabbleContext);
+  const scrabbleGame = useScrabble();
   const ref = useRef<View>(null);
-  useUpdate();
+  // useUpdate();
   const currentPlayer = useCurrentPlayer();
   const [turnPlaced, setTurnPlaced] = useState(0);
 
@@ -22,11 +22,14 @@ const CellOverlay: React.FC<{
     ref,
     {
       onRelease: (payload) => {
-        currentPlayer.placeTile({
-          tile: payload.tile as TileType,
-          x: coords[0],
-          y: coords[1],
-        });
+        currentPlayer.placeTile(
+          {
+            tile: payload.tile as TileType,
+            x: coords[0],
+            y: coords[1],
+          },
+          payload.indexInHand
+        );
         setTurnPlaced(scrabbleGame.turnNumber);
         console.log(coords);
       },
